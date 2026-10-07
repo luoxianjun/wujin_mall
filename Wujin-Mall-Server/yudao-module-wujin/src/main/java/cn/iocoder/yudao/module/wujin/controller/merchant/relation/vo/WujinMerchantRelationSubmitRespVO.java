@@ -92,4 +92,26 @@ public class WujinMerchantRelationSubmitRespVO {
     public void setCopiedTemplateItemCount(Integer copiedTemplateItemCount) {
         this.copiedTemplateItemCount = copiedTemplateItemCount;
     }
+
+    @Schema(description = "已保存标准属性数量", example = "3")
+    private Integer standardAttributeCount;
+
+    @Schema(description = "待平台审核的自定义标签数量", example = "2")
+    private Integer pendingCustomTagCount;
+
+    public Integer getStandardAttributeCount() {
+        return standardAttributeCount;
+    }
+
+    public void setStandardAttributeCount(Integer standardAttributeCount) {
+        this.standardAttributeCount = standardAttributeCount;
+    }
+
+    public Integer getPendingCustomTagCount() {
+        return pendingCustomTagCount;
+    }
+
+    public void setPendingCustomTagCount(Integer pendingCustomTagCount) {
+        this.pendingCustomTagCount = pendingCustomTagCount;
+    }
 }

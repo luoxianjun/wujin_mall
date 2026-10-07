@@ -20,6 +20,16 @@ public class WujinSourcingLeadRespVO {
     private String dispatchStatus;
     private String dispatchRemark;
     private String handleRemark;
+    private LocalDateTime dispatchTime;
+    private LocalDateTime firstContactTime;
+    private LocalDateTime quotedTime;
+    private LocalDateTime convertedTime;
+    private LocalDateTime lostTime;
+    private Long processDurationMinutes;
+    private String followStage;
+    private LocalDateTime nextFollowTime;
+    private Integer quotedAmount;
+    private Integer winProbability;
     private LocalDateTime createTime;
 
     public Long getId() {
@@ -156,5 +166,85 @@ public class WujinSourcingLeadRespVO {
 
     public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
+    }
+
+    public LocalDateTime getFirstContactTime() {
+        return firstContactTime;
+    }
+
+    public void setFirstContactTime(LocalDateTime firstContactTime) {
+        this.firstContactTime = firstContactTime;
+    }
+
+    public LocalDateTime getQuotedTime() {
+        return quotedTime;
+    }
+
+    public void setQuotedTime(LocalDateTime quotedTime) {
+        this.quotedTime = quotedTime;
+    }
+
+    public LocalDateTime getConvertedTime() {
+        return convertedTime;
+    }
+
+    public void setConvertedTime(LocalDateTime convertedTime) {
+        this.convertedTime = convertedTime;
+    }
+
+    public LocalDateTime getLostTime() {
+        return lostTime;
+    }
+
+    public void setLostTime(LocalDateTime lostTime) {
+        this.lostTime = lostTime;
+    }
+
+    public Long getProcessDurationMinutes() {
+        return processDurationMinutes;
+    }
+
+    public void setProcessDurationMinutes(Long processDurationMinutes) {
+        this.processDurationMinutes = processDurationMinutes;
+    }
+
+    public String getFollowStage() {
+        return followStage;
+    }
+
+    public void setFollowStage(String followStage) {
+        this.followStage = followStage;
+    }
+
+    public LocalDateTime getNextFollowTime() {
+        return nextFollowTime;
+    }
+
+    public void setNextFollowTime(LocalDateTime nextFollowTime) {
+        this.nextFollowTime = nextFollowTime;
+    }
+
+    public Integer getQuotedAmount() {
+        return quotedAmount;
+    }
+
+    public void setQuotedAmount(Integer quotedAmount) {
+        this.quotedAmount = quotedAmount;
+    }
+
+    public Integer getWinProbability() {
+        return winProbability;
+    }
+
+    public void setWinProbability(Integer winProbability) {
+        this.winProbability = winProbability;
+    }
+
+    public LocalDateTime getDispatchTime() {
+        return dispatchTime;
+    }
+
+    public void setDispatchTime(LocalDateTime dispatchTime) {
+        this.dispatchTime = dispatchTime;
     }
 }

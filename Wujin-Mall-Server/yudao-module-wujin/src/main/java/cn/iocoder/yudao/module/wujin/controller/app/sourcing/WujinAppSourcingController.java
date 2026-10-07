@@ -1,18 +1,24 @@
 package cn.iocoder.yudao.module.wujin.controller.app.sourcing;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadProgressRespVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadSubmitReqVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadSubmitRespVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCandidateReqVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCandidateRespVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityReqVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityRespVO;
 import cn.iocoder.yudao.module.wujin.service.sourcing.WujinAppSourcingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -42,5 +48,25 @@ public class WujinAppSourcingController {
     public CommonResult<WujinSourcingLeadSubmitRespVO> submitLead(
             @Valid @RequestBody WujinSourcingLeadSubmitReqVO reqVO) {
         return success(sourcingService.submitLead(reqVO));
+    }
+
+    @GetMapping("/lead/progress")
+    @Operation(summary = "获得我的寻源线索进度")
+    @Parameter(name = "leadId", description = "线索编号", required = true)
+    public CommonResult<WujinSourcingLeadProgressRespVO> getLeadProgress(@RequestParam("leadId") Long leadId) {
+        return success(sourcingService.getLeadProgress(leadId, SecurityFrameworkUtils.getLoginUserId()));
+    }
+
+    @GetMapping("/lead/my-list")
+    @Operation(summary = "获得我提交的寻源线索")
+    public CommonResult<List<WujinSourcingLeadProgressRespVO>> getMyLeadList() {
+        return success(sourcingService.getMyLeadList(SecurityFrameworkUtils.getLoginUserId()));
+    }
+
+    @GetMapping("/supplier-capability")
+    @Operation(summary = "获得供应商供应能力")
+    public CommonResult<WujinSupplierCapabilityRespVO> getSupplierCapability(
+            @Valid WujinSupplierCapabilityReqVO reqVO) {
+        return success(sourcingService.getSupplierCapability(reqVO));
     }
 }

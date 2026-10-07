@@ -6,8 +6,11 @@ import cn.iocoder.yudao.module.wujin.audit.WujinAuditReason;
 import cn.iocoder.yudao.module.wujin.controller.admin.audit.vo.WujinRelationAuditRecordSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.merchant.vo.WujinMerchantRelationSubmissionSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.monitor.vo.WujinMonitorDashboardRespVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.monitor.vo.WujinMonitorTrendRespVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.monitor.vo.WujinSearchBehaviorLogSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.template.vo.WujinIndustryTemplateSaveReqVO;
+import cn.iocoder.yudao.module.wujin.dal.dataobject.monitor.WujinSearchBehaviorLogDO;
+import cn.iocoder.yudao.module.wujin.dal.mysql.monitor.WujinSearchBehaviorLogMapper;
 import cn.iocoder.yudao.module.wujin.monitor.WujinMonitorMetric;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
 import cn.iocoder.yudao.module.wujin.service.audit.WujinRelationAuditRecordAdminService;
@@ -16,10 +19,14 @@ import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationSubmi
 import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationSubmissionAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.template.WujinIndustryTemplateAdminService;
 import cn.iocoder.yudao.module.wujin.service.template.WujinIndustryTemplateAdminServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
 import javax.annotation.Resource;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,6 +48,57 @@ class WujinMonitorDashboardServiceDbTest extends BaseDbUnitTest {
     private WujinRelationAuditRecordAdminService auditRecordService;
     @Resource
     private WujinMonitorDashboardService dashboardService;
+    @Resource
+    private WujinSearchBehaviorLogMapper behaviorLogMapper;
+
+    @Test
+    void getTrendBucketsSearchLogsByDayWithEmptyDaysAndTopKeywords() throws Exception {
+        LocalDate end = LocalDate.of(2026, 10, 7);
+        insertLog("轮胎", WujinLane.PRODUCT.name(), true, 5, 1000L, end.atTime(9, 0));
+        insertLog("轮胎", WujinLane.PRODUCT.name(), false, 3, 3000L, end.atTime(18, 30));
+        insertLog("天然橡胶", WujinLane.MATERIAL.name(), true, 4, 500L, end.minusDays(2).atTime(12, 0));
+        insertLog("过期关键词", WujinLane.PRODUCT.name(), true, 5, 100L, end.minusDays(9).atTime(12, 0));
+
+        WujinMonitorTrendRespVO trend = dashboardService.getTrend(end, 7);
+
+        assertEquals(end.minusDays(6), trend.getStartDate());
+        assertEquals(end, trend.getEndDate());
+        assertEquals(3, trend.getTotalSearchCount());
+        assertEquals(7, trend.getPoints().size());
+        WujinMonitorTrendRespVO.DailyPoint today = trend.getPoints().get(6);
+        assertEquals(end, today.getDate());
+        assertEquals(2, today.getSearchCount());
+        assertEquals(0.5, today.getChainViewRate(), 0.0001);
+        assertEquals(4.0, today.getSearchSatisfaction(), 0.0001);
+        assertEquals(2000.0, today.getAverageResponseTimeMillis(), 0.0001);
+        assertEquals(0, trend.getPoints().get(5).getSearchCount());
+        assertEquals(1, trend.getPoints().get(4).getSearchCount());
+        assertEquals("轮胎", trend.getTopKeywords().get(0).getKeyword());
+        assertEquals(2, trend.getTopKeywords().get(0).getSearchCount());
+        assertEquals(WujinLane.PRODUCT.name(), trend.getLaneStats().get(0).getLane());
+        assertEquals(1, dashboardService.getTrend(end, 0).getPoints().size());
+        // 应用的 ObjectMapper 注册了 JavaTimeModule，LocalDate 默认输出数组，前端需要 yyyy-MM-dd 字符串
+        String json = new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(trend);
+        assertTrue(json.contains("\"date\":\"2026-10-07\""));
+        assertTrue(json.contains("\"startDate\":\"2026-10-01\""));
+        assertEquals(90, dashboardService.getTrend(end, 365).getPoints().size());
+    }
+
+    private void insertLog(String keyword, String lane, boolean chainViewed, Integer satisfactionScore,
+                           Long responseTimeMillis, LocalDateTime createTime) {
+        WujinSearchBehaviorLogDO log = new WujinSearchBehaviorLogDO();
+        log.setUserId(101L);
+        log.setKeyword(keyword);
+        log.setIntent(lane);
+        log.setResultLane(lane);
+        log.setChainViewed(chainViewed);
+        log.setClassificationCorrect(true);
+        log.setHighRiskWarningTriggered(false);
+        log.setSatisfactionScore(satisfactionScore);
+        log.setResponseTimeMillis(responseTimeMillis);
+        log.setCreateTime(createTime);
+        behaviorLogMapper.insert(log);
+    }
 
     @Test
     void getSummaryAggregatesSearchLogsAndAuditRecords() {

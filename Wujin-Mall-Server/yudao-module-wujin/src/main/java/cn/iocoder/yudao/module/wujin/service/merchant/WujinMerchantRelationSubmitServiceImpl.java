@@ -27,6 +27,7 @@ import cn.iocoder.yudao.module.wujin.merchant.WujinMerchantRelationDraft;
 import cn.iocoder.yudao.module.wujin.merchant.WujinMerchantRelationService;
 import cn.iocoder.yudao.module.wujin.merchant.WujinMerchantRelationSubmission;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityRelationAdminService;
 import cn.iocoder.yudao.module.wujin.service.supply.WujinMerchantSupplyCapabilityAdminService;
@@ -70,6 +71,8 @@ public class WujinMerchantRelationSubmitServiceImpl implements WujinMerchantRela
     private WujinChainEntityRelationAdminService chainRelationService;
     @Resource
     private ProductSpuApi productSpuApi;
+    @Resource
+    private WujinProductAttributeService productAttributeService;
 
     private final WujinMerchantRelationService relationService = new WujinMerchantRelationService();
 
@@ -77,6 +80,7 @@ public class WujinMerchantRelationSubmitServiceImpl implements WujinMerchantRela
     @Transactional(rollbackFor = Exception.class)
     public WujinMerchantRelationSubmitRespVO submitRelation(WujinMerchantRelationSubmitReqVO reqVO) {
         reqVO.setMerchantId(resolveMerchantId(reqVO));
+        productAttributeService.validateStandardAttributes(WujinLane.PRODUCT.name(), reqVO.getStandardAttributes());
         Long productId = resolveProductId(reqVO);
         reqVO.setProductId(productId);
 
@@ -113,6 +117,10 @@ public class WujinMerchantRelationSubmitServiceImpl implements WujinMerchantRela
         if (auditDecision.getRoute() == WujinMerchantAuditRoute.AUTO_APPROVE) {
             createEffectiveRelations(submissionId, supplyEntityId, template);
         }
+        int standardAttributeCount = productAttributeService.saveStandardAttributes(submissionId,
+                reqVO.getMerchantId(), productId, WujinLane.PRODUCT.name(), reqVO.getStandardAttributes());
+        int pendingCustomTagCount = productAttributeService.submitCustomTags(submissionId, reqVO.getMerchantId(),
+                productId, reqVO.getProductName(), reqVO.getCustomTags(), reqVO.getCustomTagReviewNote());
 
         WujinMerchantRelationSubmitRespVO respVO = new WujinMerchantRelationSubmitRespVO();
         respVO.setSubmissionId(submissionId);
@@ -123,6 +131,8 @@ public class WujinMerchantRelationSubmitServiceImpl implements WujinMerchantRela
         respVO.setCompletenessScore(completenessScore.getScore());
         respVO.setCompletenessSuggestion(completenessScore.getSuggestion());
         respVO.setCopiedTemplateItemCount(templateItems.size());
+        respVO.setStandardAttributeCount(standardAttributeCount);
+        respVO.setPendingCustomTagCount(pendingCustomTagCount);
         return respVO;
     }
 

@@ -1,12 +1,16 @@
 package cn.iocoder.yudao.module.wujin.service.sourcing;
 
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.wujin.controller.admin.chain.vo.WujinChainEntityListReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.merchant.vo.WujinMerchantRelationItemListReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.supply.vo.WujinMerchantSupplyCapabilityListReqVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadProgressRespVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadSubmitReqVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadSubmitRespVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCandidateReqVO;
 import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCandidateRespVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityReqVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityRespVO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.chain.WujinChainEntityDO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.merchant.WujinMerchantRelationItemDO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.merchant.WujinMerchantRelationSubmissionDO;
@@ -14,6 +18,7 @@ import cn.iocoder.yudao.module.wujin.dal.dataobject.sourcing.WujinSourcingLeadDO
 import cn.iocoder.yudao.module.wujin.dal.dataobject.supply.WujinMerchantSupplyCapabilityDO;
 import cn.iocoder.yudao.module.wujin.dal.mysql.sourcing.WujinSourcingLeadMapper;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationItemAdminService;
 import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationSubmissionAdminService;
@@ -22,9 +27,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Validated
@@ -35,6 +49,9 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
     private static final int SUPPLY_STATUS_ACTIVE = 0;
     private static final String LEAD_STATUS_SUBMITTED = "SUBMITTED";
     private static final String DISPATCH_STATUS_PENDING = "PENDING";
+    private static final String DISPATCH_STATUS_DISPATCHED = "DISPATCHED";
+    private static final int MY_LEAD_LIMIT = 50;
+    private static final DateTimeFormatter STEP_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @Resource
     private WujinChainEntityAdminService chainEntityService;
@@ -46,6 +63,8 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
     private WujinMerchantSupplyCapabilityAdminService capabilityService;
     @Resource
     private WujinSourcingLeadMapper sourcingLeadMapper;
+    @Resource
+    private WujinProductAttributeService productAttributeService;
 
     @Override
     public List<WujinSupplierCandidateRespVO> getSupplierCandidates(WujinSupplierCandidateReqVO reqVO) {
@@ -58,7 +77,21 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
             candidates.add(buildCandidate(reqVO, lane, entity));
         }
         Collections.sort(candidates, (left, right) -> right.getMatchScore().compareTo(left.getMatchScore()));
-        return candidates;
+        return distinctCandidates(candidates);
+    }
+
+    /**
+     * 同一商家同时有供应能力和审核通过的关系申报时只保留匹配分最高的一条，避免小程序出现重复供应商卡片
+     */
+    private List<WujinSupplierCandidateRespVO> distinctCandidates(List<WujinSupplierCandidateRespVO> candidates) {
+        Set<String> keys = new LinkedHashSet<>();
+        List<WujinSupplierCandidateRespVO> distinct = new ArrayList<>();
+        for (WujinSupplierCandidateRespVO candidate : candidates) {
+            if (keys.add(candidate.getSupplierType() + ":" + candidate.getId() + ":" + candidate.getEntityId())) {
+                distinct.add(candidate);
+            }
+        }
+        return distinct;
     }
 
     @Override
@@ -66,7 +99,8 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
         validateLead(reqVO);
 
         WujinSourcingLeadDO lead = new WujinSourcingLeadDO();
-        lead.setUserId(reqVO.getUserId());
+        Long loginUserId = SecurityFrameworkUtils.getLoginUserId();
+        lead.setUserId(loginUserId != null ? loginUserId : reqVO.getUserId());
         lead.setKeyword(reqVO.getKeyword());
         lead.setLane(parseLane(reqVO.getLane(), WujinLane.MATERIAL).name());
         lead.setSourceKeyword(reqVO.getSourceKeyword());
@@ -85,6 +119,291 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
         respVO.setLeadStatus(LEAD_STATUS_SUBMITTED);
         respVO.setMessage("寻源线索已提交，平台将尽快分发给匹配商家");
         return respVO;
+    }
+
+    @Override
+    public WujinSourcingLeadProgressRespVO getLeadProgress(Long leadId, Long userId) {
+        WujinSourcingLeadDO lead = leadId == null ? null : sourcingLeadMapper.selectById(leadId);
+        if (lead == null) {
+            throw new IllegalArgumentException("寻源线索不存在");
+        }
+        if (userId == null || !userId.equals(lead.getUserId())) {
+            throw new IllegalArgumentException("无权查看该寻源线索");
+        }
+        WujinSourcingLeadProgressRespVO respVO = buildLeadSummary(lead);
+        respVO.setSteps(buildLeadSteps(lead));
+        return respVO;
+    }
+
+    @Override
+    public List<WujinSourcingLeadProgressRespVO> getMyLeadList(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        List<WujinSourcingLeadProgressRespVO> list = new ArrayList<>();
+        for (WujinSourcingLeadDO lead : sourcingLeadMapper.selectListByUserId(userId, MY_LEAD_LIMIT)) {
+            list.add(buildLeadSummary(lead));
+        }
+        return list;
+    }
+
+    @Override
+    public WujinSupplierCapabilityRespVO getSupplierCapability(WujinSupplierCapabilityReqVO reqVO) {
+        if (SUPPLIER_TYPE_PLATFORM.equals(reqVO.getSupplierType())) {
+            return buildPlatformSupplierCapability(reqVO);
+        }
+        WujinMerchantSupplyCapabilityListReqVO listReqVO = new WujinMerchantSupplyCapabilityListReqVO();
+        listReqVO.setMerchantId(reqVO.getSupplierId());
+        listReqVO.setSupplyStatus(SUPPLY_STATUS_ACTIVE);
+        List<WujinMerchantSupplyCapabilityDO> capabilities = capabilityService.getCapabilityList(listReqVO);
+
+        WujinSupplierCapabilityRespVO respVO = new WujinSupplierCapabilityRespVO();
+        respVO.setSupplierId(reqVO.getSupplierId());
+        respVO.setSupplierType(SUPPLIER_TYPE_MERCHANT);
+        respVO.setSupplierName("商家" + reqVO.getSupplierId());
+        List<WujinSupplierCapabilityRespVO.CapabilityItem> items = new ArrayList<>();
+        Set<String> mainCapabilities = new LinkedHashSet<>();
+        Set<String> approvedTags = new LinkedHashSet<>();
+        Set<Long> productIds = new LinkedHashSet<>();
+        boolean keywordMatched = false;
+        for (WujinMerchantSupplyCapabilityDO capability : capabilities) {
+            WujinChainEntityDO entity = capability.getEntityId() == null
+                    ? null : chainEntityService.getEntity(capability.getEntityId());
+            WujinSupplierCapabilityRespVO.CapabilityItem item = new WujinSupplierCapabilityRespVO.CapabilityItem();
+            item.setProductId(capability.getProductId());
+            item.setProductName(capability.getProductName());
+            item.setEntityId(capability.getEntityId());
+            item.setEntityName(entity == null ? null : entity.getName());
+            item.setLane(capability.getLane());
+            item.setIndustry(capability.getIndustry());
+            item.setStockCount(capability.getStockCount());
+            item.setMinOrderQuantity(capability.getMinOrderQuantity());
+            item.setDeliveryDays(capability.getDeliveryDays());
+            item.setServiceArea(capability.getServiceArea());
+            item.setRemark(capability.getRemark());
+            items.add(item);
+            mainCapabilities.add(capability.getProductName());
+            if (entity != null) {
+                mainCapabilities.add(entity.getName());
+            }
+            keywordMatched = keywordMatched || contains(capability.getProductName(), reqVO.getKeyword())
+                    || (entity != null && contains(entity.getName(), reqVO.getKeyword()));
+            if (capability.getProductId() != null && productIds.add(capability.getProductId())) {
+                approvedTags.addAll(productAttributeService.getApprovedTagNames(capability.getProductId()));
+            }
+        }
+        if (!items.isEmpty()) {
+            respVO.setSupplierName("商家" + reqVO.getSupplierId() + " · " + items.get(0).getProductName());
+        }
+        respVO.setCapabilities(items);
+        respVO.setMainCapabilities(new ArrayList<>(mainCapabilities));
+        respVO.setApprovedTags(new ArrayList<>(approvedTags));
+        respVO.setLanes(buildLaneCapabilities(capabilities));
+        respVO.setMatchScore(items.isEmpty() ? 0 : keywordMatched ? 96 : 88);
+        respVO.setServiceNote(buildCapabilitySummary(capabilities));
+        return respVO;
+    }
+
+    private WujinSupplierCapabilityRespVO buildPlatformSupplierCapability(WujinSupplierCapabilityReqVO reqVO) {
+        WujinChainEntityDO entity = chainEntityService.getEntity(reqVO.getSupplierId());
+        WujinSupplierCapabilityRespVO respVO = new WujinSupplierCapabilityRespVO();
+        respVO.setSupplierId(reqVO.getSupplierId());
+        respVO.setSupplierType(SUPPLIER_TYPE_PLATFORM);
+        respVO.setCapabilities(Collections.<WujinSupplierCapabilityRespVO.CapabilityItem>emptyList());
+        respVO.setApprovedTags(Collections.<String>emptyList());
+        if (entity == null) {
+            respVO.setMainCapabilities(Collections.<String>emptyList());
+            respVO.setLanes(Collections.<WujinSupplierCapabilityRespVO.LaneCapability>emptyList());
+            respVO.setMatchScore(0);
+            return respVO;
+        }
+        WujinLane lane = parseLane(entity.getLane(), WujinLane.MATERIAL);
+        respVO.setSupplierName(entity.getName() + "供应协作商");
+        respVO.setMatchScore(calculateMatchScore(toCandidateReq(reqVO), entity));
+        respVO.setServiceNote("平台产业链实体兜底候选，提交寻源线索后由平台匹配" + entity.getName()
+                + "的认证商家并跟进报价。");
+        respVO.setMainCapabilities(new ArrayList<>(Arrays.asList(entity.getName(),
+                laneName(lane) + "寻源", "规格报价")));
+        WujinSupplierCapabilityRespVO.LaneCapability laneCapability = new WujinSupplierCapabilityRespVO.LaneCapability();
+        laneCapability.setLabel(laneName(lane));
+        laneCapability.setValue(lane.name());
+        laneCapability.setNote("由平台撮合" + entity.getName() + "供应商");
+        respVO.setLanes(Collections.singletonList(laneCapability));
+        return respVO;
+    }
+
+    private WujinSupplierCandidateReqVO toCandidateReq(WujinSupplierCapabilityReqVO reqVO) {
+        WujinSupplierCandidateReqVO candidateReqVO = new WujinSupplierCandidateReqVO();
+        candidateReqVO.setKeyword(reqVO.getKeyword());
+        candidateReqVO.setLane(reqVO.getLane());
+        candidateReqVO.setSourceKeyword(reqVO.getSourceKeyword());
+        candidateReqVO.setIndustry(reqVO.getIndustry());
+        return candidateReqVO;
+    }
+
+    private List<WujinSupplierCapabilityRespVO.LaneCapability> buildLaneCapabilities(
+            List<WujinMerchantSupplyCapabilityDO> capabilities) {
+        Map<String, List<WujinMerchantSupplyCapabilityDO>> byLane = new LinkedHashMap<>();
+        for (WujinMerchantSupplyCapabilityDO capability : capabilities) {
+            String lane = parseLane(capability.getLane(), WujinLane.PRODUCT).name();
+            if (!byLane.containsKey(lane)) {
+                byLane.put(lane, new ArrayList<WujinMerchantSupplyCapabilityDO>());
+            }
+            byLane.get(lane).add(capability);
+        }
+        List<WujinSupplierCapabilityRespVO.LaneCapability> lanes = new ArrayList<>();
+        for (Map.Entry<String, List<WujinMerchantSupplyCapabilityDO>> entry : byLane.entrySet()) {
+            WujinSupplierCapabilityRespVO.LaneCapability laneCapability = new WujinSupplierCapabilityRespVO.LaneCapability();
+            laneCapability.setValue(entry.getKey());
+            laneCapability.setLabel(laneName(WujinLane.valueOf(entry.getKey())));
+            Integer fastestDays = null;
+            for (WujinMerchantSupplyCapabilityDO capability : entry.getValue()) {
+                if (capability.getDeliveryDays() != null
+                        && (fastestDays == null || capability.getDeliveryDays() < fastestDays)) {
+                    fastestDays = capability.getDeliveryDays();
+                }
+            }
+            laneCapability.setNote(entry.getValue().size() + " 项供应能力"
+                    + (fastestDays == null ? "，交期待确认" : "，最快 " + fastestDays + " 天交付"));
+            lanes.add(laneCapability);
+        }
+        return lanes;
+    }
+
+    private String buildCapabilitySummary(List<WujinMerchantSupplyCapabilityDO> capabilities) {
+        if (capabilities.isEmpty()) {
+            return "该供应商暂未登记启用中的供应能力，可提交寻源线索由平台协助确认。";
+        }
+        Set<String> serviceAreas = new LinkedHashSet<>();
+        Integer minOrder = null;
+        for (WujinMerchantSupplyCapabilityDO capability : capabilities) {
+            if (!isBlank(capability.getServiceArea())) {
+                serviceAreas.add(capability.getServiceArea());
+            }
+            if (capability.getMinOrderQuantity() != null
+                    && (minOrder == null || capability.getMinOrderQuantity() < minOrder)) {
+                minOrder = capability.getMinOrderQuantity();
+            }
+        }
+        return "登记 " + capabilities.size() + " 项启用中的供应能力"
+                + (serviceAreas.isEmpty() ? "" : "，服务" + String.join("、", serviceAreas))
+                + (minOrder == null ? "，起订量可议" : "，最低起订量 " + minOrder) + "。";
+    }
+
+    private WujinSourcingLeadProgressRespVO buildLeadSummary(WujinSourcingLeadDO lead) {
+        WujinSourcingLeadProgressRespVO respVO = new WujinSourcingLeadProgressRespVO();
+        respVO.setLeadId(lead.getId());
+        respVO.setTitle(lead.getKeyword() + " 寻源线索");
+        respVO.setKeyword(lead.getKeyword());
+        respVO.setLane(lead.getLane());
+        respVO.setSourceKeyword(lead.getSourceKeyword());
+        respVO.setIndustry(lead.getIndustry());
+        respVO.setSupplierName(lead.getSupplierName());
+        respVO.setRequirement(lead.getRequirement());
+        respVO.setLeadStatus(lead.getLeadStatus());
+        respVO.setLeadStatusName(leadStatusName(lead.getLeadStatus()));
+        respVO.setDispatchStatus(lead.getDispatchStatus());
+        respVO.setQuotedAmount(lead.getQuotedAmount());
+        respVO.setCreateTime(lead.getCreateTime());
+        respVO.setSummary(leadSummary(lead));
+        return respVO;
+    }
+
+    private List<WujinSourcingLeadProgressRespVO.Step> buildLeadSteps(WujinSourcingLeadDO lead) {
+        List<WujinSourcingLeadProgressRespVO.Step> steps = new ArrayList<>();
+        boolean dispatched = DISPATCH_STATUS_DISPATCHED.equals(lead.getDispatchStatus());
+        boolean contacted = lead.getFirstContactTime() != null || statusAtLeast(lead.getLeadStatus(), "CONTACTED");
+        boolean quoted = lead.getQuotedTime() != null || statusAtLeast(lead.getLeadStatus(), "QUOTED");
+        boolean lost = "LOST".equals(lead.getLeadStatus());
+        boolean converted = "CONVERTED".equals(lead.getLeadStatus());
+
+        steps.add(step("SUBMITTED", "已提交", lead.getCreateTime(), "需求已记录：" + lead.getRequirement(), true));
+        steps.add(step("DISPATCHED", "平台分发", lead.getDispatchTime(), dispatched
+                ? "已分发给" + (isBlank(lead.getSupplierName()) ? "匹配商家" : lead.getSupplierName())
+                : "平台正在按" + laneName(parseLane(lead.getLane(), WujinLane.MATERIAL)) + "泳道匹配供应商", dispatched));
+        steps.add(step("CONTACTED", "供应商联系", lead.getFirstContactTime(),
+                contacted ? "供应商已与您取得联系" : "等待供应商确认能力、交期并联系您", contacted));
+        String quoteNote = lead.getQuotedAmount() == null ? "供应商已给出报价"
+                : "供应商报价 ¥" + new BigDecimal(lead.getQuotedAmount())
+                .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP).toPlainString();
+        steps.add(step("QUOTED", "供应商报价", lead.getQuotedTime(),
+                quoted ? quoteNote : "确认规格后供应商将提供报价", quoted));
+        if (lost) {
+            steps.add(step("LOST", "未达成合作", lead.getLostTime(),
+                    isBlank(lead.getHandleRemark()) ? "本次寻源未达成合作，可重新发起寻源" : lead.getHandleRemark(), true));
+        } else {
+            steps.add(step("CONVERTED", "达成合作", lead.getConvertedTime(),
+                    converted ? "已与供应商达成合作" : "进入样品、合同或替代方案确认", converted));
+        }
+        if (!lost && !converted) {
+            for (WujinSourcingLeadProgressRespVO.Step step : steps) {
+                if (!Boolean.TRUE.equals(step.getDone())) {
+                    step.setActive(true);
+                    break;
+                }
+            }
+        }
+        return steps;
+    }
+
+    private WujinSourcingLeadProgressRespVO.Step step(String key, String title, LocalDateTime time,
+                                                      String description, boolean done) {
+        WujinSourcingLeadProgressRespVO.Step step = new WujinSourcingLeadProgressRespVO.Step();
+        step.setKey(key);
+        step.setTitle(title);
+        step.setTime(time == null ? (done ? "" : "待处理") : STEP_TIME_FORMATTER.format(time));
+        step.setDescription(description);
+        step.setDone(done);
+        step.setActive(false);
+        return step;
+    }
+
+    private boolean statusAtLeast(String status, String expected) {
+        List<String> order = Arrays.asList("SUBMITTED", "ASSIGNED", "CONTACTED", "QUOTED", "CONVERTED");
+        int index = order.indexOf(status);
+        return index >= 0 && index >= order.indexOf(expected);
+    }
+
+    private String leadSummary(WujinSourcingLeadDO lead) {
+        String status = lead.getLeadStatus();
+        if ("CONVERTED".equals(status)) {
+            return "已与供应商达成合作。";
+        }
+        if ("LOST".equals(status)) {
+            return "本次寻源未达成合作，可调整需求后重新发起。";
+        }
+        if ("QUOTED".equals(status)) {
+            return "供应商已报价，请留意供应商联系并确认合作。";
+        }
+        if ("CONTACTED".equals(status)) {
+            return "供应商已联系，正在确认规格、交期与报价。";
+        }
+        if (DISPATCH_STATUS_DISPATCHED.equals(lead.getDispatchStatus())) {
+            return "已分发给匹配商家，等待供应商联系。";
+        }
+        return "平台正在为您匹配供应商。";
+    }
+
+    private String leadStatusName(String status) {
+        if (status == null) {
+            return "-";
+        }
+        switch (status) {
+            case "SUBMITTED":
+                return "已提交";
+            case "ASSIGNED":
+                return "已分发";
+            case "CONTACTED":
+                return "已联系";
+            case "QUOTED":
+                return "已报价";
+            case "CONVERTED":
+                return "已成交";
+            case "LOST":
+                return "未成交";
+            default:
+                return status;
+        }
     }
 
     private List<WujinChainEntityDO> searchEnabledEntities(WujinSupplierCandidateReqVO reqVO, WujinLane lane) {
@@ -128,6 +447,7 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
                                                                        WujinMerchantSupplyCapabilityDO capability) {
         WujinSupplierCandidateRespVO candidate = new WujinSupplierCandidateRespVO();
         candidate.setId(capability.getMerchantId());
+        candidate.setSupplierType(SUPPLIER_TYPE_MERCHANT);
         candidate.setEntityId(entity.getId());
         candidate.setEntityName(entity.getName());
         candidate.setLane(lane.name());
@@ -197,6 +517,7 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
                                                                WujinMerchantRelationSubmissionDO submission) {
         WujinSupplierCandidateRespVO candidate = new WujinSupplierCandidateRespVO();
         candidate.setId(submission.getMerchantId());
+        candidate.setSupplierType(SUPPLIER_TYPE_MERCHANT);
         candidate.setEntityId(entity.getId());
         candidate.setEntityName(entity.getName());
         candidate.setLane(lane.name());
@@ -239,6 +560,7 @@ public class WujinAppSourcingServiceImpl implements WujinAppSourcingService {
                                                         WujinChainEntityDO entity) {
         WujinSupplierCandidateRespVO candidate = new WujinSupplierCandidateRespVO();
         candidate.setId(entity.getId());
+        candidate.setSupplierType(SUPPLIER_TYPE_PLATFORM);
         candidate.setEntityId(entity.getId());
         candidate.setEntityName(entity.getName());
         candidate.setLane(lane.name());

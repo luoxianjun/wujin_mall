@@ -6,6 +6,8 @@ public class WujinMerchantImportResultRespVO {
 
     private Integer importedCount;
     private Integer skippedCount;
+    private Integer effectiveCount;
+    private Integer pendingReviewCount;
     private List<Long> submissionIds;
     private List<WujinMerchantImportPreviewRespVO.RowPreview> invalidRows;
 
@@ -39,5 +41,21 @@ public class WujinMerchantImportResultRespVO {
 
     public void setInvalidRows(List<WujinMerchantImportPreviewRespVO.RowPreview> invalidRows) {
         this.invalidRows = invalidRows;
+    }
+
+    public Integer getEffectiveCount() {
+        return effectiveCount;
+    }
+
+    public void setEffectiveCount(Integer effectiveCount) {
+        this.effectiveCount = effectiveCount;
+    }
+
+    public Integer getPendingReviewCount() {
+        return pendingReviewCount;
+    }
+
+    public void setPendingReviewCount(Integer pendingReviewCount) {
+        this.pendingReviewCount = pendingReviewCount;
     }
 }

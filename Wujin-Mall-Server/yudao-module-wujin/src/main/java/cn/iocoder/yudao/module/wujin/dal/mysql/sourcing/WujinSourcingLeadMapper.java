@@ -34,4 +34,11 @@ public interface WujinSourcingLeadMapper extends BaseMapperX<WujinSourcingLeadDO
                 .eqIfPresent(WujinSourcingLeadDO::getIndustry, reqVO.getIndustry())
                 .orderByDesc(WujinSourcingLeadDO::getId));
     }
+
+    default List<WujinSourcingLeadDO> selectListByUserId(Long userId, int limit) {
+        return selectList(new LambdaQueryWrapperX<WujinSourcingLeadDO>()
+                .eq(WujinSourcingLeadDO::getUserId, userId)
+                .orderByDesc(WujinSourcingLeadDO::getId)
+                .last("LIMIT " + limit));
+    }
 }

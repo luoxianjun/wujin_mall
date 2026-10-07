@@ -109,6 +109,40 @@ class WujinMerchantImportServiceDbTest extends BaseDbUnitTest {
         assertEquals(120, capabilities.get(0).getStockCount());
     }
 
+    @Test
+    void importRowsOutsideTemplateWaitForPlatformReviewAndKeepCapabilityDisabled() {
+        Long templateId = createTemplateWithEntity("TPL_IMPORT_REVIEW", "M_RUBBER_REVIEW");
+        entityService.createEntity(entityReq("P_VULCANIZE_IMPORT", "硫化成型", WujinLane.PROCESS.name(), "橡胶"));
+
+        WujinMerchantImportReqVO reqVO = importReq(templateId, Arrays.asList(
+                row(3201L, 7201L, "医用橡胶垫片", "天然橡胶", "原材料", 50, 5, 3),
+                row(3202L, 7202L, "医用橡胶垫片", "硫化成型", "加工工艺", 50, 5, 3)
+        ));
+
+        WujinMerchantImportPreviewRespVO preview = importService.previewImport(reqVO);
+        assertEquals(2, preview.getValidCount());
+        assertEquals(WujinRelationType.REQUIRES_MATERIAL.name(), preview.getValidRows().get(0).getRelationType());
+        assertTrue(preview.getValidRows().get(0).getTemplateMatched());
+        assertEquals(WujinRelationType.REQUIRES_PROCESS.name(), preview.getValidRows().get(1).getRelationType());
+        assertFalse(preview.getValidRows().get(1).getTemplateMatched());
+
+        WujinMerchantImportResultRespVO result = importService.importRows(reqVO);
+        assertEquals(2, result.getImportedCount());
+        assertEquals(1, result.getEffectiveCount());
+        assertEquals(1, result.getPendingReviewCount());
+
+        WujinMerchantRelationSubmissionListReqVO submissionReqVO = new WujinMerchantRelationSubmissionListReqVO();
+        submissionReqVO.setMerchantId(3202L);
+        WujinMerchantRelationSubmissionDO pending = submissionService.getSubmissionList(submissionReqVO).get(0);
+        assertEquals(10, pending.getAuditStatus());
+        assertEquals("MANUAL_REVIEW", pending.getAuditRoute());
+        assertTrue(pending.getRemark().contains("待平台审核"));
+
+        WujinMerchantSupplyCapabilityListReqVO capabilityReqVO = new WujinMerchantSupplyCapabilityListReqVO();
+        capabilityReqVO.setMerchantId(3202L);
+        assertEquals(1, capabilityService.getCapabilityList(capabilityReqVO).get(0).getSupplyStatus());
+    }
+
     private Long createTemplateWithEntity(String templateCode, String entityCode) {
         Long entityId = entityService.createEntity(entityReq(entityCode, "天然橡胶", WujinLane.MATERIAL.name(), "医疗器械,橡胶"));
         Long templateId = templateService.createTemplate(templateReq(templateCode));

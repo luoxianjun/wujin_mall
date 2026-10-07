@@ -18,6 +18,14 @@ import cn.iocoder.yudao.module.wujin.controller.merchant.sourcing.vo.WujinMercha
 import cn.iocoder.yudao.module.wujin.dal.dataobject.sourcing.WujinSourcingLeadDO;
 import cn.iocoder.yudao.module.wujin.dal.mysql.sourcing.WujinSourcingLeadMapper;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
+import cn.iocoder.yudao.module.wujin.controller.admin.attribute.vo.WujinProductCustomTagListReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.attribute.vo.WujinProductCustomTagReviewReqVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSourcingLeadProgressRespVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityReqVO;
+import cn.iocoder.yudao.module.wujin.controller.app.sourcing.vo.WujinSupplierCapabilityRespVO;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinAttributeDictionaryAdminServiceImpl;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeService;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationItemAdminService;
@@ -34,6 +42,8 @@ import org.springframework.context.annotation.Import;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -47,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         WujinIndustryTemplateAdminServiceImpl.class, WujinMerchantRelationSubmissionAdminServiceImpl.class,
         WujinMerchantRelationItemAdminServiceImpl.class,
         WujinMerchantSupplyCapabilityAdminServiceImpl.class,
+        WujinAttributeDictionaryAdminServiceImpl.class, WujinProductAttributeServiceImpl.class,
         WujinSourcingLeadAdminServiceImpl.class, WujinMerchantSourcingLeadServiceImpl.class})
 class WujinAppSourcingServiceDbTest extends BaseDbUnitTest {
 
@@ -68,6 +79,8 @@ class WujinAppSourcingServiceDbTest extends BaseDbUnitTest {
     private WujinSourcingLeadMapper sourcingLeadMapper;
     @Resource
     private ApplicationContext applicationContext;
+    @Resource
+    private WujinProductAttributeService productAttributeService;
 
     @Test
     void getSupplierCandidatesUsesEnabledChainEntities() {
@@ -369,6 +382,198 @@ class WujinAppSourcingServiceDbTest extends BaseDbUnitTest {
         assertEquals("PENDING", lead.getDispatchStatus());
         assertEquals("SUBMITTED", lead.getLeadStatus());
         assertEquals(null, lead.getMerchantId());
+    }
+
+    @Test
+    void submitterSeesLeadProgressStepsWhileOtherUsersAreRejected() {
+        WujinSourcingLeadSubmitRespVO submitted = sourcingService.submitLead(leadReq());
+
+        WujinSourcingLeadProgressRespVO submittedProgress = sourcingService.getLeadProgress(submitted.getLeadId(), 202L);
+        assertEquals("SUBMITTED", submittedProgress.getLeadStatus());
+        assertEquals("已提交", submittedProgress.getLeadStatusName());
+        assertEquals(5, submittedProgress.getSteps().size());
+        assertTrue(submittedProgress.getSteps().get(0).getDone());
+        assertTrue(submittedProgress.getSteps().get(1).getActive());
+        assertFalse(submittedProgress.getSteps().get(1).getDone());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> sourcingService.getLeadProgress(submitted.getLeadId(), 999L));
+        assertEquals("无权查看该寻源线索", exception.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> sourcingService.getLeadProgress(submitted.getLeadId(), null));
+
+        WujinSourcingLeadDispatchReqVO dispatchReqVO = new WujinSourcingLeadDispatchReqVO();
+        dispatchReqVO.setLeadId(submitted.getLeadId());
+        dispatchReqVO.setMerchantId(3001L);
+        sourcingLeadAdminService.dispatchLead(dispatchReqVO);
+        merchantSourcingLeadService.handleLead(handleReq(submitted.getLeadId(), "CONTACTED"));
+        WujinMerchantSourcingLeadHandleReqVO quoteReqVO = handleReq(submitted.getLeadId(), "QUOTED");
+        quoteReqVO.setQuotedAmount(1250000);
+        merchantSourcingLeadService.handleLead(quoteReqVO);
+
+        WujinSourcingLeadProgressRespVO quotedProgress = sourcingService.getLeadProgress(submitted.getLeadId(), 202L);
+        assertEquals("已报价", quotedProgress.getLeadStatusName());
+        assertEquals(1250000, quotedProgress.getQuotedAmount());
+        assertTrue(quotedProgress.getSteps().get(1).getDone());
+        assertTrue(quotedProgress.getSteps().get(2).getDone());
+        assertTrue(quotedProgress.getSteps().get(3).getDescription().contains("12500.00"));
+        assertTrue(quotedProgress.getSteps().get(4).getActive());
+    }
+
+    @Test
+    void myLeadListOnlyReturnsCurrentUserLeadsNewestFirst() {
+        Long first = sourcingService.submitLead(leadReq()).getLeadId();
+        WujinSourcingLeadSubmitReqVO second = leadReq();
+        second.setKeyword("天然橡胶");
+        Long secondId = sourcingService.submitLead(second).getLeadId();
+        WujinSourcingLeadSubmitReqVO other = leadReq();
+        other.setUserId(303L);
+        sourcingService.submitLead(other);
+
+        List<WujinSourcingLeadProgressRespVO> leads = sourcingService.getMyLeadList(202L);
+        assertEquals(2, leads.size());
+        assertEquals(secondId, leads.get(0).getLeadId());
+        assertEquals(first, leads.get(1).getLeadId());
+        assertEquals(null, leads.get(0).getSteps());
+        assertTrue(sourcingService.getMyLeadList(null).isEmpty());
+    }
+
+    @Test
+    void merchantHandleLeadPersistsFollowUpFields() {
+        WujinSourcingLeadSubmitRespVO submitted = sourcingService.submitLead(leadReq());
+        WujinSourcingLeadDispatchReqVO dispatchReqVO = new WujinSourcingLeadDispatchReqVO();
+        dispatchReqVO.setLeadId(submitted.getLeadId());
+        dispatchReqVO.setMerchantId(3001L);
+        sourcingLeadAdminService.dispatchLead(dispatchReqVO);
+        assertNotNull(sourcingLeadMapper.selectById(submitted.getLeadId()).getDispatchTime());
+
+        LocalDateTime nextFollowTime = LocalDateTime.of(2026, 10, 9, 10, 0);
+        WujinMerchantSourcingLeadHandleReqVO handleReqVO = handleReq(submitted.getLeadId(), "CONTACTED");
+        handleReqVO.setFollowStage("SAMPLE");
+        handleReqVO.setNextFollowTime(nextFollowTime);
+        handleReqVO.setWinProbability(60);
+        merchantSourcingLeadService.handleLead(handleReqVO);
+
+        WujinSourcingLeadDO lead = sourcingLeadMapper.selectById(submitted.getLeadId());
+        assertEquals("SAMPLE", lead.getFollowStage());
+        assertEquals(nextFollowTime, lead.getNextFollowTime());
+        assertEquals(60, lead.getWinProbability());
+
+        merchantSourcingLeadService.handleLead(handleReq(submitted.getLeadId(), "LOST"));
+        WujinSourcingLeadDO lost = sourcingLeadMapper.selectById(submitted.getLeadId());
+        assertEquals(0, lost.getWinProbability());
+        assertEquals("SAMPLE", lost.getFollowStage());
+    }
+
+    @Test
+    void supplierCapabilitySummarizesMerchantActiveCapabilitiesAndApprovedTags() {
+        Long materialEntityId = chainEntityService.createEntity(entityReq("M_RUBBER_NATURAL", "天然橡胶",
+                WujinLane.MATERIAL.name(), "轮胎橡胶"));
+        createSupplyCapability(3009L, 9001L, "现货天然橡胶原料", materialEntityId, 0);
+        createSupplyCapability(3009L, 9002L, "停供橡胶原料", materialEntityId, 1);
+        productAttributeService.submitCustomTags(null, 3009L, 9001L, "现货天然橡胶原料",
+                Collections.singletonList("SGS认证"), null);
+        WujinProductCustomTagReviewReqVO reviewReqVO = new WujinProductCustomTagReviewReqVO();
+        reviewReqVO.setId(productAttributeService.getCustomTagList(new WujinProductCustomTagListReqVO()).get(0).getId());
+        reviewReqVO.setAction("APPROVE");
+        productAttributeService.reviewCustomTag(reviewReqVO, 1L);
+
+        WujinSupplierCapabilityReqVO reqVO = new WujinSupplierCapabilityReqVO();
+        reqVO.setSupplierId(3009L);
+        reqVO.setSupplierType("MERCHANT");
+        reqVO.setKeyword("天然橡胶");
+        WujinSupplierCapabilityRespVO capability = sourcingService.getSupplierCapability(reqVO);
+
+        assertEquals("商家3009 · 现货天然橡胶原料", capability.getSupplierName());
+        assertEquals(1, capability.getCapabilities().size());
+        assertEquals("天然橡胶", capability.getCapabilities().get(0).getEntityName());
+        assertEquals(96, capability.getMatchScore());
+        assertEquals(1, capability.getLanes().size());
+        assertEquals(WujinLane.MATERIAL.name(), capability.getLanes().get(0).getValue());
+        assertTrue(capability.getLanes().get(0).getNote().contains("3 天"));
+        assertTrue(capability.getMainCapabilities().contains("天然橡胶"));
+        assertEquals(Collections.singletonList("SGS认证"), capability.getApprovedTags());
+        assertTrue(capability.getServiceNote().contains("华东"));
+
+        reqVO.setSupplierId(4040L);
+        WujinSupplierCapabilityRespVO empty = sourcingService.getSupplierCapability(reqVO);
+        assertTrue(empty.getCapabilities().isEmpty());
+        assertEquals(0, empty.getMatchScore());
+    }
+
+    @Test
+    void supplierCapabilityForPlatformCandidateUsesChainEntity() {
+        Long materialEntityId = chainEntityService.createEntity(entityReq("M_RUBBER_NATURAL", "天然橡胶",
+                WujinLane.MATERIAL.name(), "轮胎橡胶"));
+
+        WujinSupplierCapabilityReqVO reqVO = new WujinSupplierCapabilityReqVO();
+        reqVO.setSupplierId(materialEntityId);
+        reqVO.setSupplierType("PLATFORM");
+        reqVO.setKeyword("天然橡胶");
+        reqVO.setIndustry("轮胎橡胶");
+        WujinSupplierCapabilityRespVO capability = sourcingService.getSupplierCapability(reqVO);
+
+        assertEquals("天然橡胶供应协作商", capability.getSupplierName());
+        assertEquals("PLATFORM", capability.getSupplierType());
+        assertEquals(WujinLane.MATERIAL.name(), capability.getLanes().get(0).getValue());
+        assertTrue(capability.getCapabilities().isEmpty());
+    }
+
+    @Test
+    void supplierCandidatesExposeSupplierTypeAndAutoDispatchIgnoresIdCollision() {
+        Long materialEntityId = chainEntityService.createEntity(entityReq("M_RUBBER_NATURAL", "天然橡胶",
+                WujinLane.MATERIAL.name(), "轮胎橡胶"));
+        // 商家编号与实体编号相同，旧逻辑会把商家候选误判为平台兜底候选
+        createSupplyCapability(materialEntityId, 9001L, "现货天然橡胶原料", materialEntityId, 0);
+
+        WujinSupplierCandidateReqVO candidateReqVO = new WujinSupplierCandidateReqVO();
+        candidateReqVO.setKeyword("天然橡胶");
+        candidateReqVO.setLane(WujinLane.MATERIAL.name());
+        candidateReqVO.setIndustry("轮胎橡胶");
+        List<WujinSupplierCandidateRespVO> candidates = sourcingService.getSupplierCandidates(candidateReqVO);
+        assertEquals("MERCHANT", candidates.get(0).getSupplierType());
+        assertEquals("PLATFORM", candidates.get(candidates.size() - 1).getSupplierType());
+
+        WujinSourcingLeadSubmitReqVO reqVO = leadReq();
+        reqVO.setKeyword("天然橡胶");
+        reqVO.setIndustry("轮胎橡胶");
+        WujinSourcingLeadSubmitRespVO submitted = sourcingService.submitLead(reqVO);
+        sourcingLeadAdminService.autoDispatchLead(submitted.getLeadId());
+
+        WujinSourcingLeadDO lead = sourcingLeadMapper.selectById(submitted.getLeadId());
+        assertEquals(materialEntityId, lead.getMerchantId());
+        assertEquals("DISPATCHED", lead.getDispatchStatus());
+    }
+
+    @Test
+    void supplierCandidatesKeepOneCardPerMerchantAndEntity() {
+        Long materialEntityId = chainEntityService.createEntity(entityReq("M_RUBBER_NATURAL", "天然橡胶",
+                WujinLane.MATERIAL.name(), "轮胎橡胶"));
+        Long templateId = templateService.createTemplate(templateReq());
+        Long approvedSubmissionId = submissionService.createSubmission(submissionReq(3009L, 9001L,
+                "现货天然橡胶原料", templateId, 30, 90));
+        itemService.createItem(itemReq(approvedSubmissionId, materialEntityId));
+        createSupplyCapability(3009L, 9001L, "现货天然橡胶原料", materialEntityId, 0);
+
+        WujinSupplierCandidateReqVO reqVO = new WujinSupplierCandidateReqVO();
+        reqVO.setKeyword("天然橡胶");
+        reqVO.setLane(WujinLane.MATERIAL.name());
+        reqVO.setIndustry("轮胎橡胶");
+        List<WujinSupplierCandidateRespVO> candidates = sourcingService.getSupplierCandidates(reqVO);
+
+        assertEquals(1, candidates.stream()
+                .filter(candidate -> "MERCHANT".equals(candidate.getSupplierType())
+                        && Long.valueOf(3009L).equals(candidate.getId()))
+                .count());
+        assertTrue(candidates.get(0).getServiceNote().contains("供应能力索引"));
+    }
+
+    private WujinMerchantSourcingLeadHandleReqVO handleReq(Long leadId, String action) {
+        WujinMerchantSourcingLeadHandleReqVO reqVO = new WujinMerchantSourcingLeadHandleReqVO();
+        reqVO.setLeadId(leadId);
+        reqVO.setMerchantId(3001L);
+        reqVO.setHandleAction(action);
+        reqVO.setHandleRemark("跟进：" + action);
+        return reqVO;
     }
 
     private WujinChainEntitySaveReqVO entityReq(String entityCode, String name, String lane, String industries) {

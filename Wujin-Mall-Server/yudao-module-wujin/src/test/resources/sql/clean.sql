@@ -1,3 +1,6 @@
+DELETE FROM "wujin_product_custom_tag";
+DELETE FROM "wujin_product_attribute_value";
+DELETE FROM "wujin_attribute_dictionary";
 DELETE FROM "wujin_monitor_snapshot";
 DELETE FROM "wujin_sourcing_lead";
 DELETE FROM "wujin_search_behavior_log";

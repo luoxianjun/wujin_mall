@@ -8,6 +8,10 @@ const menuSqlPath = path.join(
   workspaceRoot,
   'Wujin-Mall-Server/sql/mysql/upgrade/20260610-add-wujin-admin-menus.sql',
 );
+// 后续新增五金菜单/按钮权限的升级脚本，与首版菜单脚本共同构成完整的权限菜单
+const followUpMenuSqlPaths = [
+  'Wujin-Mall-Server/sql/mysql/upgrade/20261007-add-wujin-attribute-tag-import.sql',
+].map((relativePath) => path.join(workspaceRoot, relativePath));
 const roleSqlPath = path.join(
   workspaceRoot,
   'Wujin-Mall-Server/sql/mysql/upgrade/20260613-init-wujin-role-permissions.sql',
@@ -104,7 +108,9 @@ test('wujin menu SQL repairs duplicate merchant backend menus', () => {
 });
 
 test('wujin menu SQL covers every declared backend and web permission', () => {
-  const sql = readMenuSql();
+  const sql = [menuSqlPath, ...followUpMenuSqlPaths]
+    .map((sqlPath) => fs.readFileSync(sqlPath, 'utf8'))
+    .join('\n');
   const permissions = collectWujinPermissions();
 
   assert.ok(permissions.length > 20, 'expected to discover Wujin permissions');
@@ -163,4 +169,32 @@ test('wujin role permission SQL assigns platform and merchant menu scopes separa
   assert.match(sql, /m\.`id` = @wujin_merchant_menu_id/);
   assert.match(sql, /rm\.`role_id` = @wujin_platform_role_id AND rm\.`menu_id` = m\.`id`/);
   assert.match(sql, /rm\.`role_id` = @wujin_merchant_role_id AND rm\.`menu_id` = m\.`id`/);
+});
+
+test('wujin attribute, tag and import upgrade SQL is idempotent and grants default roles', () => {
+  const sql = fs.readFileSync(followUpMenuSqlPaths[0], 'utf8');
+
+  [
+    'wujin_attribute_dictionary',
+    'wujin_product_attribute_value',
+    'wujin_product_custom_tag',
+    'dispatch_time',
+    'follow_stage',
+    'next_follow_time',
+    'quoted_amount',
+    'win_probability',
+    'wujin/platform/attribute-dictionary',
+    'wujin/platform/custom-tag-audit',
+    'wujin:merchant-import:import',
+    'wujin_platform_operator',
+    'wujin_merchant_operator',
+  ].forEach((text) => assert.match(sql, new RegExp(escapeRegExp(text))));
+
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS `wujin_attribute_dictionary`/);
+  assert.match(sql, /information_schema\.COLUMNS/);
+  assert.match(sql, /PREPARE wujin_stmt FROM @wujin_ddl/);
+  assert.doesNotMatch(sql, /ALTER TABLE `wujin_sourcing_lead`\s+ADD COLUMN `dispatch_time`[^']*;\n/);
+  const menuInserts = sql.match(/INSERT INTO `system_menu`/g) ?? [];
+  const menuGuards = sql.match(/AND NOT EXISTS \(SELECT 1 FROM `system_menu`/g) ?? [];
+  assert.equal(menuInserts.length, menuGuards.length);
 });

@@ -8,12 +8,15 @@ import cn.iocoder.yudao.module.wujin.controller.admin.merchant.vo.WujinMerchantI
 import cn.iocoder.yudao.module.wujin.controller.admin.merchant.vo.WujinMerchantRelationItemSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.merchant.vo.WujinMerchantRelationSubmissionSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.supply.vo.WujinMerchantSupplyCapabilitySaveReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.template.vo.WujinIndustryTemplateItemListReqVO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.chain.WujinChainEntityDO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.template.WujinIndustryTemplateDO;
+import cn.iocoder.yudao.module.wujin.dal.dataobject.template.WujinIndustryTemplateItemDO;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.supply.WujinMerchantSupplyCapabilityAdminService;
 import cn.iocoder.yudao.module.wujin.service.template.WujinIndustryTemplateAdminService;
+import cn.iocoder.yudao.module.wujin.service.template.WujinIndustryTemplateItemAdminService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -28,9 +31,14 @@ import java.util.List;
 public class WujinMerchantImportServiceImpl implements WujinMerchantImportService {
 
     private static final int AUDIT_STATUS_IMPORTED_APPROVED = 30;
+    private static final int AUDIT_STATUS_WAIT_REVIEW = 10;
+    private static final int SUPPLY_STATUS_ENABLED = 0;
+    private static final int SUPPLY_STATUS_DISABLED = 1;
 
     @Resource
     private WujinIndustryTemplateAdminService templateService;
+    @Resource
+    private WujinIndustryTemplateItemAdminService templateItemService;
     @Resource
     private WujinChainEntityAdminService entityService;
     @Resource
@@ -43,12 +51,14 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
     @Override
     public WujinMerchantImportPreviewRespVO previewImport(WujinMerchantImportReqVO reqVO) {
         WujinIndustryTemplateDO template = templateService.getTemplate(reqVO.getTemplateId());
+        List<WujinIndustryTemplateItemDO> templateItems = getTemplateItems(reqVO.getTemplateId());
         List<WujinMerchantImportPreviewRespVO.RowPreview> validRows = new ArrayList<>();
         List<WujinMerchantImportPreviewRespVO.RowPreview> invalidRows = new ArrayList<>();
         List<WujinMerchantImportReqVO.ImportRow> rows = reqVO.getRows() == null
                 ? Collections.<WujinMerchantImportReqVO.ImportRow>emptyList() : reqVO.getRows();
         for (int i = 0; i < rows.size(); i++) {
             WujinMerchantImportPreviewRespVO.RowPreview preview = previewRow(reqVO, template, rows.get(i), i + 1);
+            preview.setTemplateMatched(matchesTemplate(templateItems, preview));
             if (preview.getErrors().isEmpty()) {
                 validRows.add(preview);
             } else {
@@ -70,15 +80,21 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
     public WujinMerchantImportResultRespVO importRows(WujinMerchantImportReqVO reqVO) {
         WujinMerchantImportPreviewRespVO preview = previewImport(reqVO);
         List<Long> submissionIds = new ArrayList<>();
+        int effectiveCount = 0;
         for (WujinMerchantImportPreviewRespVO.RowPreview row : preview.getValidRows()) {
             Long submissionId = submissionService.createSubmission(submissionReq(reqVO, row));
             itemService.createItem(itemReq(submissionId, row));
             capabilityService.saveOrUpdateCapability(capabilityReq(reqVO, row));
             submissionIds.add(submissionId);
+            if (Boolean.TRUE.equals(row.getTemplateMatched())) {
+                effectiveCount++;
+            }
         }
 
         WujinMerchantImportResultRespVO respVO = new WujinMerchantImportResultRespVO();
         respVO.setImportedCount(submissionIds.size());
+        respVO.setEffectiveCount(effectiveCount);
+        respVO.setPendingReviewCount(submissionIds.size() - effectiveCount);
         respVO.setSkippedCount(preview.getInvalidCount());
         respVO.setSubmissionIds(submissionIds);
         respVO.setInvalidRows(preview.getInvalidRows());
@@ -97,7 +113,9 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
         preview.setProductName(row.getProductName());
         preview.setProductCategoryId(row.getProductCategoryId() == null
                 ? reqVO.getDefaultProductCategoryId() : row.getProductCategoryId());
-        preview.setRelationType(row.getRelationType());
+        preview.setEntityId(row.getEntityId());
+        preview.setEntityName(row.getEntityName());
+        preview.setRelationType(normalizeRelationType(row.getRelationType()));
         preview.setStockCount(row.getStockCount());
         preview.setMinOrderQuantity(row.getMinOrderQuantity());
         preview.setDeliveryDays(row.getDeliveryDays());
@@ -116,7 +134,7 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
         if (isBlank(row.getProductName())) {
             errors.add("商品名称不能为空");
         }
-        if (isBlank(row.getRelationType()) || !validRelationType(row.getRelationType())) {
+        if (isBlank(preview.getRelationType()) || !validRelationType(preview.getRelationType())) {
             errors.add("关系类型无效");
         }
 
@@ -164,10 +182,16 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
         saveReqVO.setProductLane(isBlank(reqVO.getProductLane()) ? WujinLane.PRODUCT.name() : reqVO.getProductLane());
         saveReqVO.setProductCategoryId(row.getProductCategoryId());
         saveReqVO.setTemplateId(reqVO.getTemplateId());
-        saveReqVO.setAuditStatus(AUDIT_STATUS_IMPORTED_APPROVED);
-        saveReqVO.setAuditRoute("IMPORT_APPROVED");
+        if (Boolean.TRUE.equals(row.getTemplateMatched())) {
+            saveReqVO.setAuditStatus(AUDIT_STATUS_IMPORTED_APPROVED);
+            saveReqVO.setAuditRoute("IMPORT_APPROVED");
+            saveReqVO.setRemark("IMPORT：" + nullToEmpty(row.getRemark()));
+        } else {
+            saveReqVO.setAuditStatus(AUDIT_STATUS_WAIT_REVIEW);
+            saveReqVO.setAuditRoute("MANUAL_REVIEW");
+            saveReqVO.setRemark("IMPORT（关系不在行业模板中，待平台审核）：" + nullToEmpty(row.getRemark()));
+        }
         saveReqVO.setCompletenessScore(100);
-        saveReqVO.setRemark("IMPORT：" + nullToEmpty(row.getRemark()));
         return saveReqVO;
     }
 
@@ -192,13 +216,56 @@ public class WujinMerchantImportServiceImpl implements WujinMerchantImportServic
         saveReqVO.setEntityId(row.getEntityId());
         saveReqVO.setLane(row.getEntityLane());
         saveReqVO.setIndustry(reqVO.getIndustryCode());
-        saveReqVO.setSupplyStatus(0);
+        saveReqVO.setSupplyStatus(Boolean.TRUE.equals(row.getTemplateMatched())
+                ? SUPPLY_STATUS_ENABLED : SUPPLY_STATUS_DISABLED);
         saveReqVO.setStockCount(row.getStockCount());
         saveReqVO.setMinOrderQuantity(row.getMinOrderQuantity());
         saveReqVO.setDeliveryDays(row.getDeliveryDays());
         saveReqVO.setServiceArea(row.getServiceArea());
         saveReqVO.setRemark("商家导入同步：" + nullToEmpty(row.getRemark()));
         return saveReqVO;
+    }
+
+    private List<WujinIndustryTemplateItemDO> getTemplateItems(Long templateId) {
+        if (templateId == null) {
+            return Collections.emptyList();
+        }
+        WujinIndustryTemplateItemListReqVO listReqVO = new WujinIndustryTemplateItemListReqVO();
+        listReqVO.setTemplateId(templateId);
+        return templateItemService.getTemplateItemList(listReqVO);
+    }
+
+    private boolean matchesTemplate(List<WujinIndustryTemplateItemDO> templateItems,
+                                    WujinMerchantImportPreviewRespVO.RowPreview row) {
+        if (row.getEntityId() == null || row.getRelationType() == null) {
+            return false;
+        }
+        for (WujinIndustryTemplateItemDO item : templateItems) {
+            if (row.getEntityId().equals(item.getEntityId()) && row.getRelationType().equals(item.getRelationType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 兼容 Excel 中填写的中文关系类型
+     */
+    private String normalizeRelationType(String relationType) {
+        if (isBlank(relationType)) {
+            return relationType;
+        }
+        String value = relationType.trim();
+        if ("原材料".equals(value) || "材料".equals(value)) {
+            return WujinRelationType.REQUIRES_MATERIAL.name();
+        }
+        if ("加工工艺".equals(value) || "工艺".equals(value) || "加工".equals(value)) {
+            return WujinRelationType.REQUIRES_PROCESS.name();
+        }
+        if ("设备".equals(value)) {
+            return WujinRelationType.REQUIRES_EQUIPMENT.name();
+        }
+        return value.toUpperCase();
     }
 
     private boolean validRelationType(String relationType) {

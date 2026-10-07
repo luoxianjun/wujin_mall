@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.wujin.controller.admin.monitor.vo.WujinSearchBeha
 import cn.iocoder.yudao.module.wujin.dal.dataobject.monitor.WujinSearchBehaviorLogDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -21,5 +22,12 @@ public interface WujinSearchBehaviorLogMapper extends BaseMapperX<WujinSearchBeh
                 .eqIfPresent(WujinSearchBehaviorLogDO::getClassificationCorrect, reqVO.getClassificationCorrect())
                 .eqIfPresent(WujinSearchBehaviorLogDO::getHighRiskWarningTriggered, reqVO.getHighRiskWarningTriggered())
                 .orderByDesc(WujinSearchBehaviorLogDO::getId));
+    }
+
+    default List<WujinSearchBehaviorLogDO> selectListByCreateTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
+        return selectList(new LambdaQueryWrapperX<WujinSearchBehaviorLogDO>()
+                .geIfPresent(WujinSearchBehaviorLogDO::getCreateTime, startTime)
+                .ltIfPresent(WujinSearchBehaviorLogDO::getCreateTime, endTime)
+                .orderByAsc(WujinSearchBehaviorLogDO::getId));
     }
 }

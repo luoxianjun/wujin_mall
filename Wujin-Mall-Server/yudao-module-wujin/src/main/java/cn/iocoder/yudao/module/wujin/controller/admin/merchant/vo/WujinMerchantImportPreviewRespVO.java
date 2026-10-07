@@ -67,6 +67,10 @@ public class WujinMerchantImportPreviewRespVO {
         private String serviceArea;
         private String remark;
         private List<String> errors;
+        /**
+         * 是否与行业模板关系一致：一致则导入后直接生效，否则进入平台审核
+         */
+        private Boolean templateMatched;
 
         public Integer getRowNo() {
             return rowNo;
@@ -186,6 +190,14 @@ public class WujinMerchantImportPreviewRespVO {
 
         public void setErrors(List<String> errors) {
             this.errors = errors;
+        }
+
+        public Boolean getTemplateMatched() {
+            return templateMatched;
+        }
+
+        public void setTemplateMatched(Boolean templateMatched) {
+            this.templateMatched = templateMatched;
         }
     }
 }

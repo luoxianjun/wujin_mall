@@ -6,6 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class WujinSupplierCandidateRespVO {
 
     private Long id;
+    /**
+     * 候选来源：MERCHANT 商家供应能力/关系申报，id 为商家编号；PLATFORM 平台产业链实体兜底，id 为实体编号
+     */
+    private String supplierType;
     private Long entityId;
     private String entityName;
     private String lane;
@@ -76,5 +80,13 @@ public class WujinSupplierCandidateRespVO {
 
     public void setServiceNote(String serviceNote) {
         this.serviceNote = serviceNote;
+    }
+
+    public String getSupplierType() {
+        return supplierType;
+    }
+
+    public void setSupplierType(String supplierType) {
+        this.supplierType = supplierType;
     }
 }

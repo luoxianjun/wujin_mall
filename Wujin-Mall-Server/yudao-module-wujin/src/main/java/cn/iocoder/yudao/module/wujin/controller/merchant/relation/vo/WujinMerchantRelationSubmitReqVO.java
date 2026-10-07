@@ -71,6 +71,19 @@ public class WujinMerchantRelationSubmitReqVO {
     @Valid
     private List<RelationItem> customRelations = new ArrayList<>();
 
+    @Schema(description = "标准属性；为空时不改动已有属性值，提供时按平台属性字典校验必填项与可选值")
+    @Valid
+    private List<StandardAttribute> standardAttributes;
+
+    @Schema(description = "自定义标签；提交后进入平台审核", example = "[\"耐高温\"]")
+    private List<String> customTags;
+
+    @Schema(description = "自定义标签审核说明", example = "适用于矿山工况")
+    private String customTagReviewNote;
+
+    @Schema(description = "自定义标签是否需要审核", example = "true")
+    private Boolean customTagReviewRequired;
+
     public Long getMerchantId() {
         return merchantId;
     }
@@ -221,6 +234,85 @@ public class WujinMerchantRelationSubmitReqVO {
 
     public void setCustomRelations(List<RelationItem> customRelations) {
         this.customRelations = customRelations == null ? new ArrayList<>() : customRelations;
+    }
+
+    public List<StandardAttribute> getStandardAttributes() {
+        return standardAttributes;
+    }
+
+    public void setStandardAttributes(List<StandardAttribute> standardAttributes) {
+        this.standardAttributes = standardAttributes;
+    }
+
+    public List<String> getCustomTags() {
+        return customTags;
+    }
+
+    public void setCustomTags(List<String> customTags) {
+        this.customTags = customTags;
+    }
+
+    public String getCustomTagReviewNote() {
+        return customTagReviewNote;
+    }
+
+    public void setCustomTagReviewNote(String customTagReviewNote) {
+        this.customTagReviewNote = customTagReviewNote;
+    }
+
+    public Boolean getCustomTagReviewRequired() {
+        return customTagReviewRequired;
+    }
+
+    public void setCustomTagReviewRequired(Boolean customTagReviewRequired) {
+        this.customTagReviewRequired = customTagReviewRequired;
+    }
+
+    public static class StandardAttribute {
+
+        @Schema(description = "平台属性字典编号", example = "1")
+        private Long attributeId;
+
+        @Schema(description = "平台属性编码", example = "FINISHED_PRODUCT_SPEC")
+        private String code;
+
+        @Schema(description = "属性名称", example = "规格型号")
+        private String name;
+
+        @Schema(description = "属性值", example = "205/55R16")
+        private String value;
+
+        public Long getAttributeId() {
+            return attributeId;
+        }
+
+        public void setAttributeId(Long attributeId) {
+            this.attributeId = attributeId;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
     }
 
     public static class RelationItem {

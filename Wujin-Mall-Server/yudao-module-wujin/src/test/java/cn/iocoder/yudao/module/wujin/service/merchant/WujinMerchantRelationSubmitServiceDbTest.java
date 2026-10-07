@@ -18,6 +18,13 @@ import cn.iocoder.yudao.module.wujin.dal.dataobject.merchant.WujinMerchantRelati
 import cn.iocoder.yudao.module.wujin.dal.dataobject.supply.WujinMerchantSupplyCapabilityDO;
 import cn.iocoder.yudao.module.wujin.merchant.WujinMerchantAuditRoute;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
+import cn.iocoder.yudao.module.wujin.controller.admin.attribute.vo.WujinAttributeDictionarySaveReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.attribute.vo.WujinProductCustomTagListReqVO;
+import cn.iocoder.yudao.module.wujin.dal.dataobject.attribute.WujinProductAttributeValueDO;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinAttributeDictionaryAdminService;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinAttributeDictionaryAdminServiceImpl;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeService;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityRelationAdminServiceImpl;
@@ -35,11 +42,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +61,8 @@ import static org.mockito.Mockito.when;
         WujinMerchantRelationSubmissionAdminServiceImpl.class,
         WujinMerchantRelationItemAdminServiceImpl.class,
         WujinMerchantSupplyCapabilityAdminServiceImpl.class,
+        WujinAttributeDictionaryAdminServiceImpl.class,
+        WujinProductAttributeServiceImpl.class,
         WujinMerchantRelationSubmitServiceImpl.class})
 class WujinMerchantRelationSubmitServiceDbTest extends BaseDbUnitTest {
 
@@ -67,8 +80,92 @@ class WujinMerchantRelationSubmitServiceDbTest extends BaseDbUnitTest {
     private WujinMerchantSupplyCapabilityAdminService capabilityService;
     @Resource
     private WujinMerchantRelationSubmitService submitService;
+    @Resource
+    private WujinAttributeDictionaryAdminService attributeDictionaryService;
+    @Resource
+    private WujinProductAttributeService productAttributeService;
     @MockBean
     private ProductSpuApi productSpuApi;
+
+    @Test
+    void submitProductPublishPersistsStandardAttributesAndPendingCustomTags() {
+        Long templateId = createTireTemplate("ATTR");
+        attributeDictionaryService.createAttribute(attributeReq("SPEC", "规格型号", "TEXT", true));
+        WujinMerchantRelationSubmitReqVO reqVO = submitReq(templateId);
+        reqVO.setStandardAttributes(Arrays.asList(standardAttribute("规格型号", "205/55R16"),
+                standardAttribute("产地", "山东")));
+        reqVO.setCustomTags(Arrays.asList("静音", "耐磨", "静音"));
+        reqVO.setCustomTagReviewNote("第三方检测报告已上传");
+
+        WujinMerchantRelationSubmitRespVO result = submitService.submitRelation(reqVO);
+
+        assertEquals(2, result.getStandardAttributeCount());
+        assertEquals(2, result.getPendingCustomTagCount());
+        List<WujinProductAttributeValueDO> values = productAttributeService.getAttributeValueList(
+                result.getSubmissionId(), null);
+        assertEquals("SPEC", values.get(0).getAttributeCode());
+        assertEquals("205/55R16", values.get(0).getAttributeValue());
+        WujinProductCustomTagListReqVO tagListReqVO = new WujinProductCustomTagListReqVO();
+        tagListReqVO.setSubmissionId(result.getSubmissionId());
+        assertEquals(2, productAttributeService.getCustomTagList(tagListReqVO).size());
+        assertEquals("第三方检测报告已上传",
+                productAttributeService.getCustomTagList(tagListReqVO).get(0).getReviewNote());
+    }
+
+    @Test
+    void submitProductPublishRejectsMissingRequiredStandardAttributeBeforeCreatingSpu() {
+        Long templateId = createTireTemplate("ATTR_REQUIRED");
+        attributeDictionaryService.createAttribute(attributeReq("SPEC", "规格型号", "TEXT", true));
+        WujinMerchantRelationSubmitReqVO reqVO = submitReq(templateId);
+        reqVO.setProductId(null);
+        reqVO.setStandardAttributes(Collections.singletonList(standardAttribute("产地", "山东")));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> submitService.submitRelation(reqVO));
+        assertEquals("标准属性「规格型号」为必填项", exception.getMessage());
+        verify(productSpuApi, never()).createSpu(any(ProductSpuCreateReqDTO.class));
+    }
+
+    @Test
+    void submitRelationWithoutStandardAttributesSkipsDictionaryValidation() {
+        Long templateId = createTireTemplate("ATTR_SKIP");
+        attributeDictionaryService.createAttribute(attributeReq("SPEC", "规格型号", "TEXT", true));
+
+        WujinMerchantRelationSubmitRespVO result = submitService.submitRelation(submitReq(templateId));
+
+        assertEquals(0, result.getStandardAttributeCount());
+        assertEquals(0, result.getPendingCustomTagCount());
+    }
+
+    private Long createTireTemplate(String suffix) {
+        Long materialEntityId = entityService.createEntity(entityReq("E_RUBBER_" + suffix, "天然橡胶", WujinLane.MATERIAL.name()));
+        Long processEntityId = entityService.createEntity(entityReq("E_VULCANIZE_" + suffix, "硫化工艺", WujinLane.PROCESS.name()));
+        Long templateId = templateService.createTemplate(templateReq("TPL_TIRE_" + suffix, "轮胎属性模板", "TIRE_RUBBER"));
+        templateItemService.createTemplateItem(templateItemReq(templateId, materialEntityId,
+                WujinRelationType.REQUIRES_MATERIAL.name(), true, 10));
+        templateItemService.createTemplateItem(templateItemReq(templateId, processEntityId,
+                WujinRelationType.REQUIRES_PROCESS.name(), true, 20));
+        return templateId;
+    }
+
+    private WujinAttributeDictionarySaveReqVO attributeReq(String code, String name, String valueType, boolean required) {
+        WujinAttributeDictionarySaveReqVO reqVO = new WujinAttributeDictionarySaveReqVO();
+        reqVO.setCode(code);
+        reqVO.setName(name);
+        reqVO.setGroupName("成品属性");
+        reqVO.setLane(WujinLane.PRODUCT.name());
+        reqVO.setValueType(valueType);
+        reqVO.setRequiredFlag(required);
+        reqVO.setStatus(0);
+        return reqVO;
+    }
+
+    private WujinMerchantRelationSubmitReqVO.StandardAttribute standardAttribute(String name, String value) {
+        WujinMerchantRelationSubmitReqVO.StandardAttribute attribute = new WujinMerchantRelationSubmitReqVO.StandardAttribute();
+        attribute.setName(name);
+        attribute.setValue(value);
+        return attribute;
+    }
 
     @Test
     void submitRelationCreatesSubmissionCopiesTemplateItemsAndComputesRoute() {

@@ -2,11 +2,15 @@ package cn.iocoder.yudao.module.wujin.controller.admin.sourcing;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.module.wujin.controller.admin.sourcing.vo.WujinSourcingLeadConversionReportReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.sourcing.vo.WujinSourcingLeadConversionReportRespVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.sourcing.vo.WujinSourcingLeadListReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.sourcing.vo.WujinSourcingLeadRespVO;
 import cn.iocoder.yudao.module.wujin.controller.merchant.sourcing.vo.WujinMerchantSourcingLeadHandleReqVO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.sourcing.WujinSourcingLeadDO;
 import cn.iocoder.yudao.module.wujin.service.sourcing.WujinMerchantSourcingLeadService;
+import cn.iocoder.yudao.module.wujin.service.sourcing.WujinSourcingLeadAdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +35,8 @@ public class WujinMerchantSourcingLeadController {
 
     @Resource
     private WujinMerchantSourcingLeadService merchantSourcingLeadService;
+    @Resource
+    private WujinSourcingLeadAdminService sourcingLeadAdminService;
 
     @GetMapping("/list")
     @Operation(summary = "获得商家寻源线索列表")
@@ -44,7 +50,21 @@ public class WujinMerchantSourcingLeadController {
     @Operation(summary = "处理商家寻源线索")
     @PreAuthorize("@ss.hasPermission('wujin:merchant-sourcing-lead:update')")
     public CommonResult<Boolean> handleLead(@Valid @RequestBody WujinMerchantSourcingLeadHandleReqVO reqVO) {
+        if (reqVO.getMerchantId() == null) {
+            reqVO.setMerchantId(SecurityFrameworkUtils.getLoginUserId());
+        }
         merchantSourcingLeadService.handleLead(reqVO);
         return success(true);
+    }
+
+    @GetMapping("/conversion-report")
+    @Operation(summary = "获得商家寻源线索转化报表")
+    @PreAuthorize("@ss.hasPermission('wujin:merchant-sourcing-lead:query')")
+    public CommonResult<WujinSourcingLeadConversionReportRespVO> getConversionReport(
+            @Valid WujinSourcingLeadConversionReportReqVO reqVO) {
+        if (reqVO.getMerchantId() == null) {
+            reqVO.setMerchantId(SecurityFrameworkUtils.getLoginUserId());
+        }
+        return success(sourcingLeadAdminService.getConversionReport(reqVO));
     }
 }

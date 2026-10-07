@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +41,7 @@ public class WujinSourcingLeadAdminServiceImpl implements WujinSourcingLeadAdmin
         lead.setDispatchStatus("DISPATCHED");
         lead.setLeadStatus("ASSIGNED");
         lead.setDispatchRemark(reqVO.getDispatchRemark());
+        lead.setDispatchTime(LocalDateTime.now());
         sourcingLeadMapper.updateById(lead);
     }
 
@@ -58,6 +60,7 @@ public class WujinSourcingLeadAdminServiceImpl implements WujinSourcingLeadAdmin
         lead.setLeadStatus("ASSIGNED");
         lead.setDispatchRemark("自动匹配分发给" + candidate.getSupplierName()
                 + "，匹配分" + candidate.getMatchScore() + "；" + candidate.getServiceNote());
+        lead.setDispatchTime(LocalDateTime.now());
         sourcingLeadMapper.updateById(lead);
     }
 
@@ -85,8 +88,8 @@ public class WujinSourcingLeadAdminServiceImpl implements WujinSourcingLeadAdmin
         reqVO.setIndustry(lead.getIndustry());
         List<WujinSupplierCandidateRespVO> candidates = appSourcingService.getSupplierCandidates(reqVO);
         for (WujinSupplierCandidateRespVO candidate : candidates) {
-            if (candidate.getId() != null && candidate.getEntityId() != null
-                    && !candidate.getId().equals(candidate.getEntityId())) {
+            if (candidate.getId() != null
+                    && WujinAppSourcingService.SUPPLIER_TYPE_MERCHANT.equals(candidate.getSupplierType())) {
                 return candidate;
             }
         }

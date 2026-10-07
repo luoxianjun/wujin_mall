@@ -33,7 +33,28 @@ public class WujinMerchantSourcingLeadServiceImpl implements WujinMerchantSourci
         lead.setLeadStatus(reqVO.getHandleAction());
         lead.setHandleRemark(reqVO.getHandleRemark());
         applyProcessTime(lead, reqVO.getHandleAction(), now);
+        applyFollowUp(lead, reqVO);
         sourcingLeadMapper.updateById(lead);
+    }
+
+    private void applyFollowUp(WujinSourcingLeadDO lead, WujinMerchantSourcingLeadHandleReqVO reqVO) {
+        if (reqVO.getFollowStage() != null && !reqVO.getFollowStage().trim().isEmpty()) {
+            lead.setFollowStage(reqVO.getFollowStage().trim());
+        }
+        if (reqVO.getNextFollowTime() != null) {
+            lead.setNextFollowTime(reqVO.getNextFollowTime());
+        }
+        if (reqVO.getQuotedAmount() != null) {
+            lead.setQuotedAmount(reqVO.getQuotedAmount());
+        }
+        if (reqVO.getWinProbability() != null) {
+            lead.setWinProbability(reqVO.getWinProbability());
+        }
+        if ("CONVERTED".equals(reqVO.getHandleAction())) {
+            lead.setWinProbability(100);
+        } else if ("LOST".equals(reqVO.getHandleAction())) {
+            lead.setWinProbability(0);
+        }
     }
 
     private void validateTransition(String currentStatus, String nextStatus) {
