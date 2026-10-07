@@ -1,0 +1,33 @@
+-- 五金商城小程序手机号验证码登录依赖的会员用户表
+
+CREATE TABLE IF NOT EXISTS `member_user` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+    `mobile` varchar(11) NOT NULL COMMENT '手机号',
+    `password` varchar(100) NOT NULL DEFAULT '' COMMENT '密码',
+    `status` tinyint NOT NULL DEFAULT 0 COMMENT '账号状态',
+    `register_ip` varchar(32) NOT NULL DEFAULT '' COMMENT '注册 IP',
+    `register_terminal` tinyint DEFAULT NULL COMMENT '注册终端',
+    `login_ip` varchar(50) DEFAULT '' COMMENT '最后登录IP',
+    `login_date` datetime DEFAULT NULL COMMENT '最后登录时间',
+    `nickname` varchar(30) NOT NULL DEFAULT '' COMMENT '用户昵称',
+    `avatar` varchar(255) NOT NULL DEFAULT '' COMMENT '头像',
+    `name` varchar(30) DEFAULT NULL COMMENT '真实名字',
+    `sex` tinyint DEFAULT NULL COMMENT '性别',
+    `birthday` datetime DEFAULT NULL COMMENT '出生日期',
+    `area_id` int DEFAULT NULL COMMENT '所在地',
+    `mark` varchar(255) DEFAULT NULL COMMENT '用户备注',
+    `point` int DEFAULT 0 COMMENT '积分',
+    `tag_ids` varchar(255) DEFAULT NULL COMMENT '会员标签列表',
+    `level_id` bigint DEFAULT NULL COMMENT '会员级别编号',
+    `experience` int DEFAULT 0 COMMENT '会员经验',
+    `group_id` bigint DEFAULT NULL COMMENT '用户分组编号',
+    `creator` varchar(64) DEFAULT '' COMMENT '创建者',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updater` varchar(64) DEFAULT '' COMMENT '更新者',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
+    `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_mobile` (`mobile`, `deleted`, `tenant_id`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员用户';

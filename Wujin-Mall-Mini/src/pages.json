@@ -1,0 +1,177 @@
+{
+  "pages": [
+    {
+      "path": "pages/wujin/search",
+      "style": {
+        "navigationBarTitleText": "五金搜索",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/search-result",
+      "style": {
+        "navigationBarTitleText": "搜索结果",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/detail",
+      "style": {
+        "navigationBarTitleText": "五金详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/sourcing",
+      "style": {
+        "navigationBarTitleText": "一键寻源",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/supplier-capability",
+      "style": {
+        "navigationBarTitleText": "供应能力",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/lead-progress",
+      "style": {
+        "navigationBarTitleText": "线索进度",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/trace-map",
+      "style": {
+        "navigationBarTitleText": "溯源图谱",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/trace-fullscreen",
+      "style": {
+        "navigationBarTitleText": "全屏溯源",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/wujin/profile",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages/users",
+      "pages": [
+        {
+          "path": "login",
+          "style": {
+            "navigationBarTitleText": "登录",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/messages",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "消息",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "chat",
+          "style": {
+            "navigationBarTitleText": "聊天",
+            "navigationStyle": "custom",
+            "app-plus": {
+              "softinputMode": "adjustResize"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "root": "TUIKit",
+      "pages": [
+        {
+          "path": "components/TUIConversation/index",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        },
+        {
+          "path": "components/TUIChat/index",
+          "style": {
+            "navigationBarTitleText": "IM",
+            "app-plus": {
+              "softinputMode": "adjustResize",
+              "titleNView": {
+                "buttons": [
+                  {
+                    "type": "menu"
+                  }
+                ]
+              }
+            },
+            "h5": {
+              "titleNView": {
+                "buttons": []
+              }
+            }
+          }
+        },
+        {
+          "path": "components/TUIChat/video-play",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        },
+        {
+          "path": "components/TUIChat/web-view",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        },
+        {
+          "path": "components/TUIContact/index",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        },
+        {
+          "path": "components/TUIGroup/index",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        },
+        {
+          "path": "components/TUISearch/index",
+          "style": {
+            "navigationBarTitleText": "IM"
+          }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/wujin/search": {
+      "network": "all",
+      "packages": []
+    }
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "五金商城",
+    "navigationBarBackgroundColor": "#FFD21E",
+    "backgroundColor": "#F7F8FA"
+  }
+}

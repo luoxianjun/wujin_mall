@@ -1,0 +1,290 @@
+[
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/backend-mock/.env",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/backend-mock/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-antd/.env",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-antd/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-antd/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-antd/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-antd/.env.development",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-antd/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-antd/.env.production",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-antd/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-antd/.env.sit",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-antd/.env.sit.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-ele/.env",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-ele/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-ele/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-ele/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-ele/.env.development",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-ele/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-ele/.env.production",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-ele/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-naive/.env",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-naive/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-naive/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-naive/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-naive/.env.development",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-naive/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/apps/web-naive/.env.production",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/apps/web-naive/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/playground/.env",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/playground/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/playground/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/playground/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/playground/.env.development",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/playground/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Merchant-Web/playground/.env.production",
+    "example": "config-examples/Wujin-Mall-Merchant-Web/playground/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/backend-mock/.env",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/backend-mock/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-antd/.env",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-antd/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-antd/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-antd/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-antd/.env.development",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-antd/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-antd/.env.production",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-antd/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-antd/.env.sit",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-antd/.env.sit.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-ele/.env",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-ele/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-ele/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-ele/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-ele/.env.development",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-ele/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-ele/.env.production",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-ele/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-naive/.env",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-naive/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-naive/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-naive/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-naive/.env.development",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-naive/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/apps/web-naive/.env.production",
+    "example": "config-examples/Wujin-Mall-Platform-Web/apps/web-naive/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/playground/.env",
+    "example": "config-examples/Wujin-Mall-Platform-Web/playground/.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/playground/.env.analyze",
+    "example": "config-examples/Wujin-Mall-Platform-Web/playground/.env.analyze.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/playground/.env.development",
+    "example": "config-examples/Wujin-Mall-Platform-Web/playground/.env.development.example"
+  },
+  {
+    "original": "Wujin-Mall-Platform-Web/playground/.env.production",
+    "example": "config-examples/Wujin-Mall-Platform-Web/playground/.env.production.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/script/docker/docker.env",
+    "example": "config-examples/Wujin-Mall-Server/script/docker/docker.env.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/dm/ruoyi-vue-pro-dm8.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/dm/ruoyi-vue-pro-dm8.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/kingbase/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/kingbase/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/mysql/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/mysql/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/opengauss/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/opengauss/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/oracle/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/oracle/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/postgresql/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/postgresql/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/sql/sqlserver/ruoyi-vue-pro.sql",
+    "example": "config-examples/Wujin-Mall-Server/sql/sqlserver/ruoyi-vue-pro.sql.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/AnthropicChatModelTest.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/AnthropicChatModelTest.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/BaiChuanChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/BaiChuanChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DeepSeekChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DeepSeekChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/MoonshotChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/MoonshotChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/OpenAIChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/OpenAIChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/SiliconFlowChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/SiliconFlowChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/TongYiChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/TongYiChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/MidjourneyApiTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/MidjourneyApiTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/OpenAiImageModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/OpenAiImageModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/SiliconFlowImageModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/SiliconFlowImageModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/StabilityAiImageModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/StabilityAiImageModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/TongYiImagesModelTest.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/TongYiImagesModelTest.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/ppt/xunfei/XunFeiPptApiTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/ppt/xunfei/XunFeiPptApiTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/websearch/AiBoChaWebSearchClientTest.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/websearch/AiBoChaWebSearchClientTest.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/file/FileConfigController.http",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/file/FileConfigController.http.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-iot/yudao-module-iot-gateway/src/main/resources/application.yaml",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-iot/yudao-module-iot-gateway/src/main/resources/application.yaml.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-server/src/main/resources/application-local.yaml",
+    "example": "config-examples/Wujin-Mall-Server/yudao-server/src/main/resources/application-local.yaml.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-server/src/main/resources/application-prod.yaml",
+    "example": "config-examples/Wujin-Mall-Server/yudao-server/src/main/resources/application-prod.yaml.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-server/src/main/resources/application-sit.yaml",
+    "example": "config-examples/Wujin-Mall-Server/yudao-server/src/main/resources/application-sit.yaml.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-server/src/main/resources/application.yaml",
+    "example": "config-examples/Wujin-Mall-Server/yudao-server/src/main/resources/application.yaml.example"
+  },
+  {
+    "original": "_deploy_prd.ps1",
+    "example": "config-examples/_deploy_prd.ps1.example"
+  },
+  {
+    "original": "scripts/wujin-one-click-submit-deploy.ps1",
+    "example": "config-examples/scripts/wujin-one-click-submit-deploy.ps1.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DouBaoChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DouBaoChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/GeminiChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/GeminiChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/XingHuoChatModelTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/XingHuoChatModelTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/mcp/DouBaoMcpTests.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/mcp/DouBaoMcpTests.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-infra/src/test/java/cn/iocoder/yudao/module/infra/framework/file/core/s3/S3FileClientTest.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-infra/src/test/java/cn/iocoder/yudao/module/infra/framework/file/core/s3/S3FileClientTest.java.example"
+  },
+  {
+    "original": "Wujin-Mall-Server/yudao-module-mall/yudao-module-trade/src/test/java/cn/iocoder/yudao/module/trade/framework/delivery/core/client/impl/KdNiaoExpressClientIntegrationTest.java",
+    "example": "config-examples/Wujin-Mall-Server/yudao-module-mall/yudao-module-trade/src/test/java/cn/iocoder/yudao/module/trade/framework/delivery/core/client/impl/KdNiaoExpressClientIntegrationTest.java.example"
+  }
+]

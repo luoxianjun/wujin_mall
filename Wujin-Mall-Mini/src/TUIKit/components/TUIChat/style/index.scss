@@ -1,0 +1,26 @@
+@import '../../../assets/styles/common';
+@import './web';
+@import './h5';
+@import './uni';
+@import './wx';
+
+:not(not) {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.system-notice-tip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24rpx;
+  background: #f5f5f5;
+  border-top: 1rpx solid #e0e0e0;
+
+  text {
+    font-size: 28rpx;
+    color: #999;
+  }
+}

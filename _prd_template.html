@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD · 三泳道动态分类与产业链溯源系统 — 五金商城</title>
+    <meta name="description" content="五金商城三泳道动态分类与产业链溯源系统产品需求文档">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CSS DESIGN SYSTEM
+           ======================================== */
+        :root {
+            --bg-body: #0b0f1a;
+            --bg-surface: #111827;
+            --bg-elevated: #1a2235;
+            --bg-card: #1e293b;
+            --bg-code: #0d1117;
+            --border: rgba(255,255,255,0.06);
+            --border-subtle: rgba(255,255,255,0.04);
+            --border-accent: rgba(99,102,241,0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-code: #e2e8f0;
+            --accent-1: #6366f1;
+            --accent-2: #3b82f6;
+            --accent-3: #10b981;
+            --accent-4: #f59e0b;
+            --accent-5: #ef4444;
+            --gradient-hero: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #10b981 100%);
+            --gradient-surface: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, transparent 100%);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.4);
+            --shadow-glow: 0 0 30px rgba(99,102,241,0.1);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --sidebar-width: 300px;
+            --header-height: 72px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: calc(var(--header-height) + 24px);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.75;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ========================================
+           HEADER
+           ======================================== */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: rgba(11,15,26,0.82);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+            transition: var(--transition);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-md);
+            background: var(--gradient-hero);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+        }
+
+        .brand-text h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text .version {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-dag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border-accent);
+            background: rgba(99,102,241,0.08);
+            color: var(--accent-1);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-dag:hover {
+            background: rgba(99,102,241,0.18);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-print {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-print:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+        }
+
+        .toc-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ========================================
+           SIDEBAR / TOC
+           ======================================== */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 900;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar::-webkit-scrollbar { width: 3px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+        .toc-header {
+            padding: 20px 20px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--bg-surface);
+            z-index: 5;
+        }
+
+        .toc-list { list-style: none; padding: 8px 0; }
+
+        .toc-item { position: relative; }
+
+        .toc-link {
+            display: block;
+            padding: 7px 20px 7px 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 2px solid transparent;
+            line-height: 1.5;
+        }
+
+        .toc-link:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .toc-link.active {
+            color: var(--accent-1);
+            border-left-color: var(--accent-1);
+            background: rgba(99,102,241,0.06);
+            font-weight: 500;
+        }
+
+        .toc-link.level-3 { padding-left: 36px; font-size: 12px; }
+        .toc-link.level-4 { padding-left: 52px; font-size: 11.5px; opacity: 0.85; }
+
+        .toc-progress {
+            position: sticky;
+            bottom: 0;
+            padding: 12px 20px;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-hero);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        .content-wrapper {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 48px 48px 120px;
+        }
+
+        /* ========================================
+           HERO SECTION
+           ======================================== */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(59,130,246,0.08) 40%, rgba(16,185,129,0.06) 100%);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-xl);
+            padding: 48px;
+            margin-bottom: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .meta-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .meta-chip .label { color: var(--text-muted); }
+
+        /* ========================================
+           TYPOGRAPHY
+           ======================================== */
+        .content-wrapper h2 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-top: 64px;
+            margin-bottom: 24px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            letter-spacing: -0.3px;
+            position: relative;
+        }
+
+        .content-wrapper h2::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background: var(--gradient-hero);
+            border-radius: 1px;
+        }
+
+        .content-wrapper h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            color: var(--accent-2);
+            letter-spacing: -0.2px;
+        }
+
+        .content-wrapper h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .content-wrapper p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .content-wrapper strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .content-wrapper a {
+            color: var(--accent-2);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(59,130,246,0.3);
+            transition: var(--transition);
+        }
+
+        .content-wrapper a:hover {
+            border-bottom-color: var(--accent-2);
+        }
+
+        .content-wrapper hr {
+            border: none;
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        .content-wrapper ul, .content-wrapper ol {
+            margin-bottom: 16px;
+            padding-left: 24px;
+            color: var(--text-secondary);
+        }
+
+        .content-wrapper li { margin-bottom: 6px; }
+
+        .content-wrapper blockquote {
+            border-left: 3px solid var(--accent-1);
+            background: rgba(99,102,241,0.06);
+            padding: 14px 20px;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .content-wrapper blockquote p { margin-bottom: 0; }
+
+        /* ========================================
+           TABLES
+           ======================================== */
+        .content-wrapper table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            font-size: 13.5px;
+        }
+
+        .content-wrapper thead th {
+            background: rgba(99,102,241,0.08);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .content-wrapper tbody td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        .content-wrapper tbody tr:last-child td { border-bottom: none; }
+
+        .content-wrapper tbody tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* ========================================
+           CODE BLOCKS
+           ======================================== */
+        .content-wrapper pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .content-wrapper pre code {
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-code);
+            background: none;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .content-wrapper code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.88em;
+            background: rgba(99,102,241,0.1);
+            color: #c4b5fd;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        /* Code block language label */
+        pre[data-lang]::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.04);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* SQL Syntax Highlighting */
+        .hljs-keyword { color: #c084fc; font-weight: 500; }
+        .hljs-string { color: #86efac; }
+        .hljs-number { color: #fbbf24; }
+        .hljs-comment { color: #64748b; font-style: italic; }
+        .hljs-type { color: #67e8f9; }
+        .hljs-built_in { color: #fda4af; }
+        .hljs-title { color: #93c5fd; }
+        .hljs-function { color: #93c5fd; }
+
+        /* ASCII Art Wireframe Blocks */
+        pre.wireframe {
+            background: linear-gradient(145deg, #0c1322 0%, #111a2e 50%, #0f1528 100%);
+            border: 1.5px solid rgba(99,102,241,0.18);
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.02);
+        }
+        pre.wireframe code {
+            color: #8091a7;
+            font-size: 12.5px;
+            line-height: 1.6;
+        }
+        /* Wireframe inline elements */
+        .w-btn { display:inline-block; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.28); color:#a5b4fc; padding:0 7px; border-radius:4px; font-size:inherit; font-family:inherit; }
+        .w-btn.primary { background:rgba(99,102,241,0.22); border-color:rgba(99,102,241,0.45); color:#c7d2fe; }
+        .w-chk { display:inline-block; width:1.1em; text-align:center; border:1px solid #334155; border-radius:3px; font-size:inherit; font-family:inherit; color:#475569; }
+        .w-chk.on { color:#34d399; border-color:#34d399; }
+        .w-radio.on { color:#818cf8; font-weight:bold; }
+        .w-radio.off { color:#475569; }
+        .w-sel { display:inline-block; background:rgba(0,0,0,0.25); border:1px solid #334155; border-radius:4px; padding:0 6px; color:#94a3b8; font-size:inherit; font-family:inherit; }
+        .w-inp { display:inline-block; background:rgba(0,0,0,0.3); border:1px solid #334155; border-radius:4px; padding:0 6px; color:#cbd5e1; font-size:inherit; font-family:inherit; }
+        .w-label { color:#c8d5e3; font-weight:600; letter-spacing:0.3px; }
+        .w-label-line { color:#334155; }
+        .w-arrow { color:#818cf8; font-weight:bold; }
+        .w-step { color:#818cf8; font-weight:700; }
+        .w-prog.on { color:#34d399; }
+        .w-prog.off { color:#1e293b; }
+        .w-tree { color:#475569; }
+        .w-title-line { color:#e2e8f0; font-weight:600; }
+        .w-hint { color:#fbbf24; }
+        .w-status-ok { color:#34d399; }
+        .w-status-warn { color:#fbbf24; }
+        .w-status-err { color:#f87171; }
+
+        /* Panel HTML wireframes */
+        .w-panel { background:linear-gradient(145deg,#0c1322,#111a2e,#0f1528); border:1.5px solid rgba(99,102,241,0.18); border-radius:14px; overflow:hidden; margin:24px 0; box-shadow:0 4px 30px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.02); }
+        .w-panel-header { text-align:center; padding:12px 20px; font-size:14px; font-weight:600; color:#c8d5e3; background:rgba(99,102,241,0.06); letter-spacing:2px; }
+        .w-panel-divider { border-top:1px solid rgba(99,102,241,0.12); }
+        .w-panel-body { padding:16px 20px; }
+        .w-panel-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+        .w-panel-row:last-child { margin-bottom:0; }
+        .w-panel-card { flex:1; min-width:120px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:12px 16px; text-align:center; transition:all .2s ease; }
+        .w-panel-card:hover { background:rgba(99,102,241,0.06); border-color:rgba(99,102,241,0.2); transform:translateY(-1px); }
+        .w-panel-card .card-title { color:#e2e8f0; font-weight:500; font-size:13px; }
+        .w-panel-card .card-sub { color:#64748b; font-size:11.5px; margin-top:3px; }
+        .w-panel-text { color:#94a3b8; font-size:13px; padding:3px 0; line-height:1.8; }
+        .w-panel-subheader { color:#a5b4fc; font-size:13px; font-weight:600; padding:12px 0 6px; display:flex; align-items:center; gap:12px; }
+        .w-panel-subheader::before,.w-panel-subheader::after { content:''; flex:1; height:1px; background:rgba(99,102,241,0.2); }
+        .w-panel-connector { text-align:center; padding:4px 0; font-size:16px; line-height:1; color:#818cf8; letter-spacing:4px; }
+
+        /* ========================================
+           MERMAID DIAGRAMS
+           ======================================== */
+        .mermaid-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        .mermaid-container svg {
+            max-width: 100%;
+        }
+
+        /* ========================================
+           DAG VISUALIZATION EMBED
+           ======================================== */
+        .dag-embed-section {
+            margin: 32px 0;
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--bg-elevated);
+        }
+
+        .dag-embed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: rgba(99,102,241,0.06);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dag-embed-header:hover {
+            background: rgba(99,102,241,0.1);
+        }
+
+        .dag-embed-header h4 {
+            margin: 0;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dag-embed-toggle {
+            font-size: 12px;
+            color: var(--accent-1);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dag-embed-body {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dag-embed-body.expanded { height: 1100px; }
+
+        .dag-embed-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ========================================
+           SPECIAL COMPONENTS
+           ======================================== */
+
+        /* Feature badges */
+        .feature-id {
+            display: inline-block;
+            background: rgba(99,102,241,0.12);
+            color: var(--accent-1);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent-1);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+            opacity: 0;
+            transform: translateY(16px);
+            transition: var(--transition);
+            z-index: 800;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(99,102,241,0.5);
+        }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        @media (max-width: 1200px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .toc-toggle { display: flex; }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper { padding: 24px 20px 80px; }
+            .hero-banner { padding: 28px 24px; }
+            .hero-title { font-size: 24px; }
+            .header-actions .btn-print { display: none; }
+            .content-wrapper pre { padding: 14px 16px; }
+            .content-wrapper table { font-size: 12px; }
+            .content-wrapper thead th, .content-wrapper tbody td { padding: 8px 10px; }
+        }
+
+        /* ========================================
+           PRINT
+           ======================================== */
+        @media print {
+            .site-header, .sidebar, .back-to-top, .btn-dag, .btn-print, .toc-toggle,
+            .dag-embed-section { display: none !important; }
+            .main-content { margin-left: 0 !important; margin-top: 0 !important; }
+            .content-wrapper { max-width: 100%; padding: 0; }
+            body { background: white; color: #1a1a1a; font-size: 12px; }
+            .content-wrapper h2 { color: #111; }
+            .content-wrapper h3 { color: #333; }
+            .content-wrapper pre { border-color: #ddd; background: #f8f8f8; }
+            .content-wrapper pre code { color: #333; }
+            .content-wrapper table { border-color: #ddd; }
+            .content-wrapper thead th { background: #f0f0f0; color: #111; }
+            .content-wrapper tbody td { color: #333; }
+            .hero-banner { background: #f5f5ff; border-color: #ddd; }
+            .hero-title { -webkit-text-fill-color: #333; background: none; }
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .content-wrapper > * {
+            animation: fadeIn 0.5s ease backwards;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 850;
+        }
+
+        .sidebar-overlay.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <button class="toc-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                <div class="brand-icon">🔗</div>
+                <div class="brand-text">
+                    <h1>三泳道动态分类与产业链溯源系统</h1>
+                    <span class="version">PRD V1.0 · 2026-04-01</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-dag" onclick="toggleDag()">
+                    🌐 交互式产业链图谱
+                </button>
+                <button class="btn-print" onclick="window.print()">
+                    🖨️ 打印
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+        <div class="toc-header">📑 目录导航</div>
+        <ul class="toc-list" id="tocList"></ul>
+        <div class="toc-progress">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+        <div class="content-wrapper" id="contentArea"></div>
+    </main>
+
+    <!-- ===== BACK TO TOP ===== -->
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <!-- ===== MARKDOWN SOURCE ===== -->
+    <script id="prd-source" type="text/markdown">
+{{MARKDOWN_CONTENT}}
+    </script>
+
+    <!-- ===== CDN LIBRARIES (with fallback) ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>if(typeof marked==='undefined'){document.write('<scr'+'ipt src="https://unpkg.com/marked@latest/marked.min.js"><\/scr'+'ipt>')}</script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>if(typeof mermaid==='undefined'){document.write('<scr'+'ipt src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"><\/scr'+'ipt>')}</script>
+
+    <script>
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+
+    // Configure Mermaid (guard in case CDN fails)
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: 'loose',
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1e293b',
+                primaryTextColor: '#f1f5f9',
+                primaryBorderColor: '#6366f1',
+                lineColor: '#64748b',
+                secondaryColor: '#1a2235',
+                tertiaryColor: '#111827',
+                fontFamily: 'Inter, Noto Sans SC, sans-serif',
+                fontSize: '13px',
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 15,
+                htmlLabels: true,
+                useMaxWidth: true
+            }
+        });
+    }
+
+    // Configure Marked
+    const renderer = new marked.Renderer();
+
+    // Custom heading renderer - add IDs for TOC
+    renderer.heading = function(text, level) {
+        // Handle both old and new marked APIs
+        let headingText, headingLevel;
+        if (typeof text === 'object') {
+            headingText = text.text;
+            headingLevel = text.depth;
+        } else {
+            headingText = text;
+            headingLevel = level;
+        }
+        const cleanText = headingText.replace(/<[^>]+>/g, '');
+        const id = 'section-' + cleanText.replace(/[^\w\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '');
+        return `<h${headingLevel} id="${id}">${headingText}</h${headingLevel}>`;
+    };
+
+    // Custom code block renderer
+    renderer.code = function(code, infostring) {
+        // Handle both old and new marked APIs
+        let codeText, codeLang;
+        if (typeof code === 'object') {
+            codeText = code.text;
+            codeLang = code.lang || '';
+        } else {
+            codeText = code;
+            codeLang = infostring || '';
+        }
+
+        // Mermaid diagrams
+        if (codeLang === 'mermaid') {
+            return `<div class="mermaid-container"><pre class="mermaid">${codeText}</pre></div>`;
+        }
+
+        // SQL code
+        if (codeLang === 'sql') {
+            const highlighted = highlightSQL(codeText);
+            return `<pre data-lang="sql"><code>${highlighted}</code></pre>`;
+        }
+
+        // Python code
+        if (codeLang === 'python') {
+            const highlighted = highlightPython(codeText);
+            return `<pre data-lang="python"><code>${highlighted}</code></pre>`;
+        }
+
+        // JSON code
+        if (codeLang === 'json') {
+            const highlighted = highlightJSON(codeText);
+            return `<pre data-lang="json"><code>${highlighted}</code></pre>`;
+        }
+
+        // ASCII art / wireframes (no language specified)
+        if (!codeLang) {
+            const isWireframe = /[┌┐└┘├┤─│═╔╗╚╝║▼▶►←→↑↓●○✓✅⚠️💡🔍]/.test(codeText);
+            if (isWireframe) {
+                var panelResult = asciiPanelToHtml(codeText);
+                if (panelResult) return panelResult;
+                return `<pre class="wireframe"><code>${enhanceWireframe(codeText)}</code></pre>`;
+            }
+            return `<pre><code>${escapeHtml(codeText)}</code></pre>`;
+        }
+
+        return `<pre data-lang="${codeLang}"><code>${escapeHtml(codeText)}</code></pre>`;
+    };
+
+    // Custom table renderer - already handled by CSS
+    renderer.table = function(header, body) {
+        let headerContent, bodyContent;
+        if (typeof header === 'object') {
+            // New marked API
+            const headers = header.header.map(h => `<th>${h.text}</th>`).join('');
+            const rows = header.rows.map(row => `<tr>${row.map(c => `<td>${c.text}</td>`).join('')}</tr>`).join('');
+            return `<div style="overflow-x:auto"><table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        }
+        return `<div style="overflow-x:auto"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>`;
+    };
+
+    marked.setOptions({ renderer: renderer, breaks: false, gfm: true });
+
+    // =============================================
+    // SYNTAX HIGHLIGHTING (lightweight, no CDN)
+    // =============================================
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function enhanceWireframe(raw) {
+        let h = escapeHtml(raw);
+        // Section headers: ── Text ── or ═══ Text ═══
+        h = h.replace(/(─{2,})\s+([^─═\n]{2,}?)\s+(─{2,})/g,
+            '<span class="w-tree">$1</span> <span class="w-label">$2</span> <span class="w-tree">$3</span>');
+        h = h.replace(/(═{3,})\s+/g, '<span class="w-label-line">$1</span> ');
+        h = h.replace(/\s+(═{3,})/g, ' <span class="w-label-line">$1</span>');
+        // Flow arrows ──→ ─────→
+        h = h.replace(/(─+→)/g, '<span class="w-arrow">$1</span>');
+        // Checkboxes
+        h = h.replace(/\[✓\]/g, '<span class="w-chk on">✓</span>');
+        h = h.replace(/\[ \]/g, '<span class="w-chk off">☐</span>');
+        // Radio buttons
+        h = h.replace(/● /g, '<span class="w-radio on">●</span> ');
+        h = h.replace(/○ /g, '<span class="w-radio off">○</span> ');
+        // Dropdowns [text ▼]
+        h = h.replace(/\[([^\]]+?)\s*▼\]/g, '<span class="w-sel">$1 ▼</span>');
+        // Input fields [value with trailing spaces   ]
+        h = h.replace(/\[([^\]]{1,30}?)\s{3,}\]/g, '<span class="w-inp">$1</span>');
+        h = h.replace(/\[\s{4,}\]/g, '<span class="w-inp">\u00a0\u00a0\u00a0</span>');
+        // Buttons [short text] - after checkboxes/dropdowns/inputs
+        h = h.replace(/\[([^\]]{1,20})\]/g, function(m, t) {
+            if (t.indexOf('span') > -1) return m;
+            var p = /确认|提交|下一步|确定|采纳|保存|查看|展开|联系|修改|取消/.test(t) ? ' primary' : '';
+            return '<span class="w-btn' + p + '">' + t + '</span>';
+        });
+        // Step numbers ①②③④⑤
+        h = h.replace(/([①②③④⑤⑥⑦⑧⑨⑩])/g, '<span class="w-step">$1</span>');
+        // Progress bars
+        h = h.replace(/(█+)/g, '<span class="w-prog on">$1</span>');
+        h = h.replace(/(░+)/g, '<span class="w-prog off">$1</span>');
+        // Standalone arrows (not already in ──→ spans)
+        h = h.replace(/(?<!─)→(?!<)/g, '<span class="w-arrow">→</span>');
+        h = h.replace(/([▼▶↓↑←])/g, '<span class="w-arrow">$1</span>');
+        // Hints 💡
+        h = h.replace(/💡/g, '<span class="w-hint">💡</span>');
+        // Status
+        h = h.replace(/✅/g, '<span class="w-status-ok">✅</span>');
+        h = h.replace(/⚠️/g, '<span class="w-status-warn">⚠️</span>');
+        h = h.replace(/❌/g, '<span class="w-status-err">❌</span>');
+        // Tree branches
+        h = h.replace(/(├──|└──)/g, '<span class="w-tree">$1</span>');
+        // Title lines (first content line after ├──┤ header divider)
+        // Panel title detection: line starting with │ followed by 【text】
+        h = h.replace(/【([^】]+)】/g, '<span class="w-title-line">【$1】</span>');
+        // Step labels: 步骤 N/M
+        h = h.replace(/(步骤\s*\d+\/\d+)/g, '<span class="w-label">$1</span>');
+        return h;
+    }
+
+    function enhanceInline(text) {
+        var h = escapeHtml(text);
+        h = h.replace(/(─+→)/g, '<span class="w-arrow">$1</span>');
+        h = h.replace(/\[✓\]/g, '<span class="w-chk on">✓</span>');
+        h = h.replace(/\[ \]/g, '<span class="w-chk off">☐</span>');
+        h = h.replace(/● /g, '<span class="w-radio on">●</span> ');
+        h = h.replace(/○ /g, '<span class="w-radio off">○</span> ');
+        h = h.replace(/\[([^\]]+?)\s*▼\]/g, '<span class="w-sel">$1 ▼</span>');
+        h = h.replace(/\[([^\]]{1,30}?)\s{3,}\]/g, '<span class="w-inp">$1</span>');
+        h = h.replace(/\[\s{4,}\]/g, '<span class="w-inp">&nbsp;&nbsp;&nbsp;</span>');
+        h = h.replace(/\[([^\]]{1,20})\]/g, function(m, t) {
+            if (t.indexOf('span') > -1) return m;
+            var p = /确认|提交|下一步|确定|采纳|保存|查看|展开|联系|修改|取消/.test(t) ? ' primary' : '';
+            return '<span class="w-btn' + p + '">' + t + '</span>';
+        });
+        h = h.replace(/([①②③④⑤⑥⑦⑧⑨⑩])/g, '<span class="w-step">$1</span>');
+        h = h.replace(/(█+)/g, '<span class="w-prog on">$1</span>');
+        h = h.replace(/(░+)/g, '<span class="w-prog off">$1</span>');
+        h = h.replace(/(?<!─)→(?!<)/g, '<span class="w-arrow">→</span>');
+        h = h.replace(/([▼▶↓↑←])/g, '<span class="w-arrow">$1</span>');
+        h = h.replace(/💡/g, '<span class="w-hint">💡</span>');
+        h = h.replace(/✅/g, '<span class="w-status-ok">✅</span>');
+        h = h.replace(/(步骤\s*\d+\/\d+)/g, '<span class="w-label">$1</span>');
+        return h;
+    }
+
+    function asciiPanelToHtml(text) {
+        var lines = text.split('\n');
+        var t0 = lines[0] ? lines[0].trim() : '';
+        var tN = lines[lines.length-1] ? lines[lines.length-1].trim() : '';
+        if (!t0.startsWith('┌') || !tN.startsWith('└')) return null;
+        var oL = lines[0].indexOf('┌'), oR = lines[0].lastIndexOf('┐');
+        if (oR <= oL) return null;
+        var sections = [], cur = [];
+        for (var i = 1; i < lines.length - 1; i++) {
+            var tr = lines[i].trim();
+            if (tr.startsWith('├') && tr.endsWith('┤')) {
+                if (cur.length) sections.push(cur);
+                cur = [];
+            } else {
+                var line = lines[i];
+                var inner = '';
+                if (line.length > oL + 1) {
+                    var s = oL + 1, e = line.length;
+                    var trimR = line.trimEnd();
+                    if (trimR.endsWith('│')) e = trimR.length - 1;
+                    inner = line.substring(s, e);
+                }
+                cur.push(inner);
+            }
+        }
+        if (cur.length) sections.push(cur);
+        var html = '<div class="w-panel">';
+        for (var si = 0; si < sections.length; si++) {
+            var sec = sections[si];
+            if (si > 0) html += '<div class="w-panel-divider"></div>';
+            var elems = parseSectionElems(sec);
+            var bodyOpen = false;
+            for (var ei = 0; ei < elems.length; ei++) {
+                var el = elems[ei];
+                if (el.type === 'title') {
+                    html += '<div class="w-panel-header">' + escapeHtml(el.text) + '</div>';
+                } else if (el.type === 'boxes') {
+                    if (!bodyOpen) { html += '<div class="w-panel-body">'; bodyOpen = true; }
+                    html += '<div class="w-panel-row">';
+                    for (var bi = 0; bi < el.boxes.length; bi++) {
+                        html += '<div class="w-panel-card">';
+                        el.boxes[bi].forEach(function(ln, li) {
+                            html += '<div class="' + (li===0?'card-title':'card-sub') + '">' + enhanceInline(ln) + '</div>';
+                        });
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                } else if (el.type === 'connector') {
+                    if (!bodyOpen) { html += '<div class="w-panel-body">'; bodyOpen = true; }
+                    html += '<div class="w-panel-connector"><span class="w-arrow">' + escapeHtml(el.text) + '</span></div>';
+                } else if (el.type === 'subheader') {
+                    if (!bodyOpen) { html += '<div class="w-panel-body">'; bodyOpen = true; }
+                    html += '<div class="w-panel-subheader">' + escapeHtml(el.text) + '</div>';
+                } else {
+                    if (!bodyOpen) { html += '<div class="w-panel-body">'; bodyOpen = true; }
+                    html += '<div class="w-panel-text">' + enhanceInline(el.text) + '</div>';
+                }
+            }
+            if (bodyOpen) html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function parseSectionElems(lines) {
+        var elems = [], i = 0, foundBox = false;
+        while (i < lines.length) {
+            var line = typeof lines[i] === 'string' ? lines[i] : '';
+            var s = line.trim();
+            if (!s) { i++; continue; }
+            // Detect connector-only lines: vertical pipes and/or down arrows
+            if (/^[│▼↓\s]+$/.test(s)) {
+                if (/[▼↓]/.test(s)) {
+                    elems.push({ type:'connector', text: s.replace(/│/g, '').trim() });
+                } else {
+                    elems.push({ type:'connector', text: '│' });
+                }
+                i++; continue;
+            }
+            // Detect lines that are just arrows between boxes (─────→)
+            if (/^[─→←\s]+$/.test(s)) { i++; continue; }
+            if (s.includes('┌')) {
+                var bLines = [line]; i++;
+                // Collect lines until we find a └ line where ALL or most boxes close
+                // Strategy: keep collecting until we hit a line with └ and no │ content after it
+                var lastCloseIdx = -1;
+                while (i < lines.length) {
+                    var l2 = typeof lines[i] === 'string' ? lines[i] : '';
+                    bLines.push(l2);
+                    if (l2.includes('└')) lastCloseIdx = bLines.length - 1;
+                    i++;
+                    // Stop when we find a └ line that doesn't also have unclosed │ content
+                    // i.e., check if next line still has box content (│ but no ┌)
+                    if (l2.includes('└')) {
+                        var nextLine = (i < lines.length) ? (typeof lines[i] === 'string' ? lines[i] : '') : '';
+                        var nextTrim = nextLine.trim();
+                        // Continue if next line has │ content (still inside a box)
+                        if (nextTrim && /^│/.test(nextTrim) && !nextTrim.includes('┌')) {
+                            continue;
+                        }
+                        // Continue if next line has └ (another box closing)
+                        if (nextTrim && nextTrim.includes('└')) {
+                            continue;
+                        }
+                        break;
+                    }
+                }
+                elems.push({ type:'boxes', boxes: parseBoxRow(bLines) });
+                foundBox = true;
+            } else if (/──\s+.+\s+──/.test(s)) {
+                var m = s.match(/──+\s+(.+?)\s+──+/);
+                elems.push({ type:'subheader', text: m ? m[1] : s });
+                i++;
+            } else if (!foundBox && !s.includes('[') && !s.includes('：') && !s.includes('•') && !/[①②③④⑤]/.test(s) && s.length < 30) {
+                elems.push({ type:'title', text: s });
+                i++;
+            } else {
+                elems.push({ type:'text', text: s });
+                i++;
+            }
+        }
+        return elems;
+    }
+
+    function parseBoxRow(lines) {
+        var topLine = lines[0];
+        var boxCount = (topLine.match(/┌/g) || []).length;
+        if (boxCount === 0) return [];
+        var boxes = [];
+        for (var b = 0; b < boxCount; b++) boxes.push([]);
+        for (var i = 1; i < lines.length; i++) {
+            var line = typeof lines[i] === 'string' ? lines[i] : '';
+            // Skip pure border lines (all ┌┐└┘─ and spaces)
+            if (/^[\s┌┐└┘─│]+$/.test(line.trim())) continue;
+            // Skip lines that are only └ closers
+            if (line.trim().replace(/[└┘─\s]/g, '') === '') continue;
+            // Collect all non-empty text segments between │ delimiters
+            var segs = [];
+            var parts = line.split('│');
+            for (var p = 0; p < parts.length; p++) {
+                var seg = parts[p].trim();
+                // Filter out pure border/arrow segments
+                if (seg && !/^[─→←┌┐└┘\s]+$/.test(seg)) {
+                    segs.push(seg);
+                }
+            }
+            // Assign segments to boxes
+            if (segs.length === boxCount) {
+                // Perfect alignment - assign 1:1
+                for (var j = 0; j < segs.length; j++) {
+                    boxes[j].push(segs[j]);
+                }
+            } else if (segs.length === 1 && boxCount > 1) {
+                // Single segment on a line - try to find which box it belongs to
+                // Based on character position of the segment in the original line
+                var segStart = line.indexOf(segs[0]);
+                var bestBox = 0;
+                var boxMids = [];
+                // Estimate box center positions from the top line
+                var topParts = topLine.split('┌');
+                var pos = 0;
+                for (var k = 0; k < boxCount; k++) {
+                    var boxIdx = topLine.indexOf('┌', k === 0 ? 0 : topLine.indexOf('┌', boxMids.length > 0 ? boxMids[boxMids.length-1] : 0) + 1);
+                    var boxEnd = topLine.indexOf('┐', boxIdx);
+                    if (boxIdx >= 0 && boxEnd > boxIdx) {
+                        boxMids.push((boxIdx + boxEnd) / 2);
+                    }
+                }
+                var minDist = Infinity;
+                for (var k = 0; k < boxMids.length; k++) {
+                    var dist = Math.abs(segStart - boxMids[k]);
+                    if (dist < minDist) { minDist = dist; bestBox = k; }
+                }
+                boxes[bestBox].push(segs[0]);
+            } else if (segs.length > 0) {
+                // Partial alignment - assign what we can
+                for (var j = 0; j < segs.length && j < boxCount; j++) {
+                    boxes[j].push(segs[j]);
+                }
+            }
+        }
+        return boxes.filter(function(b) { return b.length > 0; });
+    }
+
+    function highlightSQL(code) {
+        let html = escapeHtml(code);
+        // Comments
+        html = html.replace(/(--.*$)/gm, '<span class="hljs-comment">$1</span>');
+        // Keywords
+        const keywords = /\b(CREATE|TABLE|ALTER|DROP|INSERT|INTO|VALUES|SELECT|FROM|WHERE|JOIN|ON|AND|OR|NOT|NULL|DEFAULT|PRIMARY|KEY|UNIQUE|AUTO_INCREMENT|COMMENT|IF|EXISTS|INDEX|BIGINT|INT|TINYINT|VARCHAR|TEXT|JSON|DECIMAL|DATETIME|BOOLEAN|CURRENT_TIMESTAMP|UPDATE|DELETE|SET|AS|LIKE|IN|BETWEEN|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|LEFT|RIGHT|INNER|OUTER|UNION|ALL|DISTINCT|COUNT|SUM|AVG|MAX|MIN|IS)\b/gi;
+        html = html.replace(keywords, '<span class="hljs-keyword">$1</span>');
+        // Strings
+        html = html.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="hljs-string">$1</span>');
+        // Numbers
+        html = html.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="hljs-number">$1</span>');
+        return html;
+    }
+
+    function highlightPython(code) {
+        let html = escapeHtml(code);
+        html = html.replace(/(#.*$)/gm, '<span class="hljs-comment">$1</span>');
+        html = html.replace(/(&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;)/g, '<span class="hljs-string">$1</span>');
+        const kw = /\b(def|return|if|elif|else|for|while|class|import|from|as|try|except|with|in|not|and|or|is|None|True|False|lambda|yield|raise|pass|break|continue)\b/g;
+        html = html.replace(kw, '<span class="hljs-keyword">$1</span>');
+        html = html.replace(/\b(def)\s+(\w+)/g, '<span class="hljs-keyword">def</span> <span class="hljs-function">$2</span>');
+        html = html.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="hljs-string">$1</span>');
+        return html;
+    }
+
+    function highlightJSON(code) {
+        let html = escapeHtml(code);
+        html = html.replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span class="hljs-keyword">$1</span>$2');
+        html = html.replace(/:(\s*)("(?:\\.|[^"\\])*")/g, ':$1<span class="hljs-string">$2</span>');
+        html = html.replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="hljs-number">$1</span>');
+        html = html.replace(/\b(true|false|null)\b/g, '<span class="hljs-built_in">$1</span>');
+        return html;
+    }
+
+    // =============================================
+    // RENDER CONTENT
+    // =============================================
+
+    function renderContent() {
+        const mdSource = document.getElementById('prd-source').textContent;
+        const contentArea = document.getElementById('contentArea');
+
+        // Parse markdown
+        let html = marked.parse(mdSource);
+
+        // Insert hero banner before first h2
+        const heroHtml = `
+            <div class="hero-banner">
+                <div class="hero-title">三泳道动态分类与产业链溯源系统</div>
+                <div class="hero-subtitle">五金商城 · 产品需求文档</div>
+                <div class="hero-meta">
+                    <div class="meta-chip"><span class="label">版本</span> V1.0</div>
+                    <div class="meta-chip"><span class="label">日期</span> 2026-04-01</div>
+                    <div class="meta-chip"><span class="label">产品</span> 微信小程序 + PC后台</div>
+                    <div class="meta-chip"><span class="label">平台</span> 微信生态 · PC浏览器</div>
+                </div>
+            </div>
+        `;
+
+        // Remove duplicate header elements (H1 title, first H2 subtitle, metadata table)
+        // They are already displayed in the hero banner
+        html = html.replace(/<h1[^>]*>.*?<\/h1>\s*/g, '');
+        // Remove the first H2 that duplicates the hero title
+        html = html.replace(/<h2[^>]*>三泳道动态分类与产业链溯源系统<\/h2>\s*/, '');
+        // Remove the metadata table (version, date, etc.)
+        html = html.replace(/<div[^>]*>\s*<table>[\s\S]*?<\/table>\s*<\/div>/, function(match, offset) {
+            // Only remove if it appears near the beginning (first 800 chars)
+            return offset < 800 ? '' : match;
+        });
+
+        // Insert DAG embed after the sample data section
+        const dagEmbed = `
+            <div class="dag-embed-section" id="dagSection">
+                <div class="dag-embed-header" onclick="toggleDagEmbed()">
+                    <h4>🌐 交互式产业链关系图（DAG 可视化）</h4>
+                    <span class="dag-embed-toggle" id="dagToggleText">▶ 展开查看</span>
+                </div>
+                <div class="dag-embed-body" id="dagBody">
+                    <iframe src="sample_data_visualization.html" loading="lazy"></iframe>
+                </div>
+            </div>
+        `;
+
+        // Find a good place to insert the DAG - after the sample data JSON block
+        const jsonSampleIdx = html.indexOf('JSON 示例');
+        if (jsonSampleIdx > -1) {
+            const insertPoint = html.indexOf('<hr', jsonSampleIdx);
+            if (insertPoint > -1) {
+                html = html.substring(0, insertPoint) + dagEmbed + html.substring(insertPoint);
+            }
+        }
+
+        contentArea.innerHTML = heroHtml + html;
+
+        // Render mermaid diagrams
+        renderMermaid();
+
+        // Build TOC
+        buildTOC();
+
+        // Setup scroll spy
+        setupScrollSpy();
+    }
+
+    async function renderMermaid() {
+        const elements = document.querySelectorAll('.mermaid');
+        for (let i = 0; i < elements.length; i++) {
+            try {
+                const { svg } = await mermaid.render('mermaid-' + i, elements[i].textContent);
+                elements[i].innerHTML = svg;
+            } catch (e) {
+                console.warn('Mermaid render error:', e);
+                elements[i].innerHTML = '<pre style="color:var(--text-muted)">[图表渲染中... 如未显示请刷新页面]</pre>';
+            }
+        }
+    }
+
+    // =============================================
+    // TABLE OF CONTENTS
+    // =============================================
+
+    function buildTOC() {
+        const headings = document.querySelectorAll('.content-wrapper h2, .content-wrapper h3, .content-wrapper h4');
+        const tocList = document.getElementById('tocList');
+        let html = '';
+
+        headings.forEach(h => {
+            const level = parseInt(h.tagName[1]);
+            if (level > 4) return;
+            const id = h.id;
+            const text = h.textContent;
+            const levelClass = `level-${level}`;
+
+            // Shorten long headings
+            let displayText = text;
+            if (displayText.length > 35) {
+                displayText = displayText.substring(0, 33) + '…';
+            }
+
+            html += `<li class="toc-item">
+                <a href="#${id}" class="toc-link ${levelClass}" data-target="${id}">${displayText}</a>
+            </li>`;
+        });
+
+        tocList.innerHTML = html;
+    }
+
+    // =============================================
+    // SCROLL SPY & PROGRESS
+    // =============================================
+
+    function setupScrollSpy() {
+        const links = document.querySelectorAll('.toc-link');
+        const headings = [];
+        links.forEach(link => {
+            const target = document.getElementById(link.dataset.target);
+            if (target) headings.push({ el: target, link: link });
+        });
+
+        const backToTop = document.getElementById('backToTop');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = Math.min(100, Math.round((scrollTop / docHeight) * 100));
+
+            progressFill.style.width = progress + '%';
+            progressText.textContent = progress + '%';
+
+            // Back to top button
+            backToTop.classList.toggle('visible', scrollTop > 400);
+
+            // Active link
+            let current = null;
+            for (let i = headings.length - 1; i >= 0; i--) {
+                if (headings[i].el.getBoundingClientRect().top <= 120) {
+                    current = headings[i];
+                    break;
+                }
+            }
+
+            links.forEach(l => l.classList.remove('active'));
+            if (current) {
+                current.link.classList.add('active');
+                // Scroll TOC to keep active link visible
+                const sidebar = document.getElementById('sidebar');
+                const linkRect = current.link.getBoundingClientRect();
+                const sidebarRect = sidebar.getBoundingClientRect();
+                if (linkRect.top < sidebarRect.top + 60 || linkRect.bottom > sidebarRect.bottom - 60) {
+                    current.link.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+            }
+        }, { passive: true });
+    }
+
+    // =============================================
+    // INTERACTIONS
+    // =============================================
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+
+    function toggleDag() {
+        const section = document.getElementById('dagSection');
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => toggleDagEmbed(), 400);
+        }
+    }
+
+    function toggleDagEmbed() {
+        const body = document.getElementById('dagBody');
+        const text = document.getElementById('dagToggleText');
+        const expanded = body.classList.toggle('expanded');
+        text.textContent = expanded ? '▼ 收起' : '▶ 展开查看';
+    }
+
+    // Close sidebar when clicking a TOC link (mobile)
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('toc-link') && window.innerWidth <= 1200) {
+            toggleSidebar();
+        }
+    });
+
+    // =============================================
+    // INIT
+    // =============================================
+    document.addEventListener('DOMContentLoaded', renderContent);
+    </script>
+</body>
+</html>

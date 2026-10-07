@@ -1,0 +1,31 @@
+package cn.iocoder.yudao.module.gamification.job;
+
+import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.quartz.core.handler.JobHandler;
+import cn.iocoder.yudao.framework.tenant.core.job.TenantJob;
+import cn.iocoder.yudao.module.gamification.service.quiz.QuizRewardService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+
+@Slf4j
+@Component
+public class QuizRewardDistributionJob implements JobHandler {
+
+    @Resource
+    private QuizRewardService quizRewardService;
+
+    @Override
+    @TenantJob
+    public String execute(String param) {
+        int count = distributePendingRewards();
+        String result = StrUtil.format("Distributed {} quiz rewards", count);
+        log.info("[QuizRewardDistributionJob] {}", result);
+        return result;
+    }
+
+    public int distributePendingRewards() {
+        return quizRewardService.distributePendingRewards();
+    }
+}

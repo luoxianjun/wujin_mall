@@ -1,0 +1,77 @@
+.tui-conversation {
+  &-item {
+    &-pinned {
+      background: #f0f7f4;
+    }
+
+    &-selected,
+    &-toggled {
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .left {
+      .num {
+        background: #ef4444;
+        color: #fff;
+
+        &-notify {
+          background: #ef4444;
+          color: #fff;
+        }
+      }
+    }
+
+    .content-header {
+      &-label {
+        color: #1f2937;
+      }
+
+      .name {
+        font-weight: 500;
+        letter-spacing: 0;
+        color: #1f2937;
+      }
+    }
+
+    .middle-box {
+      &-at, &-draft {
+        color: #fb5059 !important;
+        font-family: "PingFang SC", -apple-system, sans-serif;
+        font-weight: 400;
+      }
+
+      &-content {
+        font-weight: 400;
+        color: #6b7280;
+        letter-spacing: 0;
+      }
+    }
+
+    .content-footer {
+      color: #6b7280;
+
+      .time {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  &-content {
+    .dialog {
+      background: #fff;
+
+      &-item {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 -4px 12px 0 rgba(0, 0, 0, 0.06);
+      }
+
+      .conversation-options {
+        font-family: "PingFang SC", -apple-system, sans-serif;
+        font-weight: 400;
+        color: #374151;
+        letter-spacing: 0;
+      }
+    }
+  }
+}

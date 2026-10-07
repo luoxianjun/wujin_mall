@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>五金智采 - 工业五金B2B采购平台</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FFD400",
+                        "background-light": "#F7F8FA",
+                        "background-dark": "#121212",
+                        "card-light": "#FFFFFF",
+                        "card-dark": "#1E1E1E",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "Noto Sans SC", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "12px",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex justify-center">
+<div class="w-full max-w-md bg-background-light dark:bg-background-dark min-h-screen flex flex-col relative shadow-xl overflow-hidden">
+<div class="bg-primary pt-10 pb-4 px-4 sticky top-0 z-50">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+<span class="text-primary font-bold text-lg">五</span>
+</div>
+<h1 class="text-lg font-bold text-black">五金智采</h1>
+</div>
+<div class="flex gap-4">
+<span class="material-icons text-black text-xl">notifications_none</span>
+<span class="material-icons text-black text-xl">qr_code_scanner</span>
+</div>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-slate-400 text-lg">search</span>
+</div>
+<input class="block w-full pl-10 pr-20 py-3 bg-white dark:bg-card-dark border-none rounded-full shadow-sm focus:ring-2 focus:ring-yellow-600 dark:focus:ring-yellow-400 text-sm" placeholder="膨胀螺丝 M10*80" type="text"/>
+<div class="absolute inset-y-1.5 right-1.5 flex items-center">
+<button class="bg-black text-white px-5 py-1.5 rounded-full text-xs font-bold">搜索</button>
+</div>
+</div>
+</div>
+<div class="bg-primary px-4 pb-1">
+<div class="flex bg-yellow-400/30 rounded-t-xl overflow-hidden">
+<button class="flex-1 py-3 text-sm font-bold bg-white dark:bg-card-dark text-black dark:text-white rounded-t-xl">成品</button>
+<button class="flex-1 py-3 text-sm font-medium text-black/60">加工</button>
+<button class="flex-1 py-3 text-sm font-medium text-black/60">原材料</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar pb-24">
+<div class="flex items-center justify-between px-4 py-3 sticky top-[138px] bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md z-40">
+<div class="flex gap-6">
+<button class="text-sm font-medium flex items-center gap-1 text-primary">综合排序 <span class="material-icons text-[16px]">arrow_drop_down</span></button>
+<button class="text-sm font-medium flex items-center gap-1 text-slate-500 dark:text-slate-400">价格 <span class="material-icons text-[16px]">swap_vert</span></button>
+<button class="text-sm font-medium flex items-center gap-1 text-slate-500 dark:text-slate-400">交期 <span class="material-icons text-[16px]">swap_vert</span></button>
+</div>
+<button class="text-sm font-medium flex items-center gap-1 text-slate-500 dark:text-slate-400">筛选 <span class="material-icons text-[16px]">filter_list</span></button>
+</div>
+<div class="mx-4 mb-4 p-4 bg-white dark:bg-card-dark rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+<div class="flex items-start gap-3">
+<div class="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+<span class="material-icons text-blue-500 text-lg">info</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">寻源决策建议</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                            为您找到 “成品” 相关结果 1,328 条。该规格标准件充足，建议直接采购成品。
+                        </p>
+<button class="mt-3 flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400">
+                            一键开启比价寻源 <span class="material-icons text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="px-4 mb-4">
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">常用分类</h3>
+<div class="flex gap-3 overflow-x-auto no-scrollbar">
+<div class="flex-shrink-0 flex flex-col items-center gap-1">
+<div class="w-12 h-12 bg-white dark:bg-card-dark rounded-xl flex items-center justify-center shadow-sm">
+<img alt="膨胀螺丝" class="w-8 h-8 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGkCEjiSKojFXWzKCPpQwTuy31sTBANsOVroEy_AT053O0QsNC7DzfDHRf0shJiB3LNOBazUbrZx_yi7QvKMD1Ri5LB9xz6mVizAry0V1Tjfm6S3dP389CutsfrRIVSpalraNtcVR6ehyByMWWM4qiBBuZsnk8x5lvNXVCN0TjNQqHL11kH0LcgJSmM5KfecAVkwkJbYPCr5CbX-r8Dc98Q57U6qWfWR1OdUx-quNj9nV_sLbfGqlm"/>
+</div>
+<span class="text-[10px]">膨胀螺丝</span>
+</div>
+<div class="flex-shrink-0 flex flex-col items-center gap-1">
+<div class="w-12 h-12 bg-white dark:bg-card-dark rounded-xl flex items-center justify-center shadow-sm">
+<img alt="螺母垫圈" class="w-8 h-8 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA10V7kkbL7El8-3-RLhhkALhEnhzXsNORelMPnziNfS_ssBG8BcrhLzV2oJ3ybh8i2o9XYStE0l-S1GYkyypur1jRQbch30oZJ0BPIUURk1ubUTJYw_Lr8WzQAqoFULoAPw5IyaEM9yCEXgnJvM4dtlYf4bgkme5J3tGcUp2Wb1hMqxCoilyIVtByEI2o5zvNYugHfkwlZGC_kbGjAP8qzlSgFBvuTUOA80mPoM0tcT7Q0TbQ4kG9P"/>
+</div>
+<span class="text-[10px]">螺母垫圈</span>
+</div>
+<div class="flex-shrink-0 flex flex-col items-center gap-1">
+<div class="w-12 h-12 bg-white dark:bg-card-dark rounded-xl flex items-center justify-center shadow-sm">
+<img alt="轴承" class="w-8 h-8 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARBlZ-tkld92w8RyFOub72hQqLCb3_xwpn_MkwX2LBwWPdjEYukbV_tzoVxK6ZJ9LyIiQA7uyGVw-ulYXLWR2-Jt5GATzjfe3faZ6Twz1uSKaS9gZA_foOym-kIcMa11XF0kZGgfCzLuwfScdSzwDZpv-xYfUSRQKxuL_megQ_g_b4xVR4C5VZQlfzY03j32h0tzUdNaSeMT4Wvqc6cvGIc-OIvTtBhRrz3zIhRPH71acCJ3u0euy8"/>
+</div>
+<span class="text-[10px]">轴承</span>
+</div>
+<div class="flex-shrink-0 flex flex-col items-center gap-1">
+<div class="w-12 h-12 bg-white dark:bg-card-dark rounded-xl flex items-center justify-center shadow-sm">
+<img alt="刀具" class="w-8 h-8 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBrMyDnagGw6VjIisaBBBESqPLcG25NFe1Xn5JBQ9BZbIlgI8CpA0EGWucS3jWzYrDqQkDFSZi80APoEBq7XV_a144ZxagW7DkpF9ursXMOn18h5i7yczOHWMBzSa6IRJxBZMOKuO9b9Le8chKgoab7CesPsb7VvUH2h7SrnHVFljR-Ef2nEO-pN2ELN0vILY77HjA4q7XD8R3RLt9SmTUPjoLulgvb6U1xHNwIRuJ1l_BdSPMS-xp"/>
+</div>
+<span class="text-[10px]">刀具</span>
+</div>
+<div class="flex-shrink-0 flex flex-col items-center gap-1">
+<div class="w-12 h-12 bg-white dark:bg-card-dark rounded-xl flex items-center justify-center shadow-sm">
+<img alt="不锈钢" class="w-8 h-8 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAt9VuMVqGNM0TPxOVTVWPiGUY0mH2DvwvT-6JNlcDwM98FajML9iHx9R6InehY5v9W5jKQjepV89ZtjqEvfWhc1PeexNjsCeLCsQ2Q-AAHjL5OuPHzecFt7ZW_Y_PHtfG_j6kTzV1jD2SmwEoeZlJNc8h9Xuua0iL5ps0_WRzHcLOJZJbhe6ser7-HQmb5MvN3bBsrZbT5q_eJXbU3kFG9Q2H6m2xTYtzP1pLmvaBx5xHZfPnPHJ-_"/>
+</div>
+<span class="text-[10px]">不锈钢</span>
+</div>
+</div>
+</div>
+<div class="space-y-3 px-4">
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4">
+<div class="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+<img alt="Carbon Steel Expansion Screw M10*80" class="w-20 h-20 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCySjtxosdxpyIFJW9ADa7A2MClyNkGkggHQY8Js0hoZmwK4rlqTpJf8zWkRVok2ZsLMuHy8SGW-4pWDsU9_uC2E0u1WaJOBXT0FKtO0iALe3SJ1svmuujW7P6lZknThWlHlkDNCzEiEGKvyFskl9n981DCNOMbD99I-vRl71O-yrPTfj1RfoO3Nv0pDi3mbHTPz2YIXaVCadDruCw88mXhDsY04pYF9ntMll41RRU9-Sx2_fAhF2Lc"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-[15px] leading-snug">碳钢膨胀螺丝 M10*80</h3>
+<div class="flex gap-2 mt-1">
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">热销</span>
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">国标</span>
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">镀锌</span>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs text-red-500 font-bold">¥</span>
+<span class="text-lg text-red-500 font-bold">0.28</span>
+<span class="text-xs text-slate-400">/个</span>
+</div>
+<div class="text-[10px] text-slate-500">MOQ 100个起订</div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-orange-500 font-bold bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full mb-1 inline-block">92分</div>
+<div class="text-[10px] text-slate-400 flex items-center justify-end gap-1">
+<span class="material-icons text-[12px]">schedule</span> 24h发货
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4">
+<div class="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+<img alt="Stainless Steel Expansion Screw M10*80" class="w-20 h-20 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnDEFocrXe7Clprbf3KMpLux6YOG20COI-CUMrfEZqxgEDwAZ1NuY3kgiUoKma66piJ3Qzq6sd4otIbKFhb0ZYyynO7Jk6PnLZoXYbWMcdHCL2_KsZTXI4UVal9EKeyUCJ4rkB1J1ADXeFroCwznza9ObHVjYReMrKRfVQGwmz5JdzGNukdTum9aZIN-QuRM0abMpsOKU4X6hoLKp8zVgeU961JW_4CRYlEB9W2tcUgYE9KzJXc4EE"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-[15px] leading-snug">国标不锈钢膨胀螺丝 M10*80</h3>
+<div class="flex gap-2 mt-1">
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">304</span>
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">不锈钢</span>
+<span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">耐腐蚀</span>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs text-red-500 font-bold">¥</span>
+<span class="text-lg text-red-500 font-bold">0.48</span>
+<span class="text-xs text-slate-400">/个</span>
+</div>
+<div class="text-[10px] text-slate-500">MOQ 200个起订</div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-orange-500 font-bold bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full mb-1 inline-block">88分</div>
+<div class="text-[10px] text-slate-400 flex items-center justify-end gap-1">
+<span class="material-icons text-[12px]">schedule</span> 48h发货
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-gradient-to-br from-slate-800 to-black p-5 rounded-2xl text-white relative overflow-hidden shadow-lg mt-6">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-icons text-primary text-xl">hub</span>
+<h3 class="font-bold text-base">上游全链溯源服务</h3>
+</div>
+<p class="text-xs text-slate-300 mb-4 leading-relaxed max-w-[240px]">
+                            查看该产品从原材料、热处理到成品的完整生产链条，确保品质可控。
+                        </p>
+<button class="bg-primary text-black px-6 py-2 rounded-full text-xs font-bold shadow-md flex items-center gap-2 active:scale-95 transition-transform">
+                            一键寻源 <span class="material-icons text-sm">auto_awesome</span>
+</button>
+</div>
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full border border-white/10"></div>
+</div>
+</div>
+<div class="py-8 text-center">
+<p class="text-xs text-slate-400">没有更多了</p>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 dark:bg-card-dark/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 flex justify-between items-center z-50">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-icons">home</span>
+<span class="text-[10px] font-bold">首页</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-icons">category</span>
+<span class="text-[10px]">分类</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-icons">explore</span>
+<span class="text-[10px]">寻源</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400 relative">
+<span class="material-icons">forum</span>
+<span class="text-[10px]">消息</span>
+<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 rounded-full border border-white">12</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-icons">person_outline</span>
+<span class="text-[10px]">我的</span>
+</div>
+</div>
+</div>
+
+</body></html>

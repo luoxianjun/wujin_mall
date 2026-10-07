@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>膨胀螺丝 M10*80 产业链溯源</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#404758",
+                    "tertiary-container": "#4bdb8a",
+                    "secondary-container": "#d9dff5",
+                    "on-secondary-fixed": "#141b2b",
+                    "inverse-surface": "#2d3133",
+                    "secondary": "#575e70",
+                    "on-primary-container": "#674b00",
+                    "surface-variant": "#e0e3e5",
+                    "surface": "#f7f9fb",
+                    "on-primary-fixed-variant": "#5c4300",
+                    "surface-bright": "#f7f9fb",
+                    "inverse-on-surface": "#eff1f3",
+                    "primary-fixed-dim": "#fbbc0c",
+                    "on-tertiary-container": "#005c32",
+                    "primary-container": "#f6b800",
+                    "error": "#ba1a1a",
+                    "on-surface": "#191c1e",
+                    "outline": "#827660",
+                    "tertiary-fixed-dim": "#51df8e",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-container": "#eceef0",
+                    "surface-tint": "#795900",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#261a00",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#006d3c",
+                    "secondary-fixed": "#dce2f7",
+                    "on-tertiary-fixed": "#00210e",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#5c6274",
+                    "primary-fixed": "#ffdea0",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-surface-variant": "#504532",
+                    "surface-dim": "#d8dadc",
+                    "tertiary-fixed": "#70fda7",
+                    "secondary-fixed-dim": "#c0c6db",
+                    "on-background": "#191c1e",
+                    "outline-variant": "#d4c5ac",
+                    "on-tertiary-fixed-variant": "#00522c",
+                    "on-error": "#ffffff",
+                    "background": "#f7f9fb",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#fbbc0c",
+                    "primary": "#795900",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "24px",
+                    "unit": "4px",
+                    "gutter": "12px",
+                    "stack-gap": "8px",
+                    "card-padding": "16px",
+                    "container-margin": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-xl": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["42px", {"lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f7f9fb;
+            color: #191c1e;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .node-line {
+            background: repeating-linear-gradient(90deg, #d4c5ac, #d4c5ac 4px, transparent 4px, transparent 8px);
+        }
+        .custom-shadow {
+            box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+        }
+        .active-tab::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: #F6B800;
+            border-radius: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen pb-32">
+<!-- Top Navigation Bar -->
+<header class="bg-primary-container dark:bg-primary flex justify-between items-center w-full px-container-margin h-14 sticky top-0 z-50 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-primary-container dark:text-on-primary">construction</span>
+<span class="text-headline-md font-headline-md font-bold text-on-primary-container">五金智采</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-primary-container dark:text-on-primary">search</span>
+</div>
+</header>
+<main class="px-container-margin mt-6">
+<!-- Title & Subtitle -->
+<section class="mb-section-gap">
+<h1 class="text-headline-md font-headline-md text-on-surface mb-unit">膨胀螺丝 M10*80 产业链溯源</h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                官方认证产业链数据 • 更新于 2023-10-24
+            </p>
+</section>
+<!-- Filter Chips -->
+<div class="flex gap-stack-gap mb-section-gap overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md relative active-tab">全部</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-label-md text-label-md">原材料</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-label-md text-label-md">加工</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface-variant font-label-md text-label-md">成品</button>
+</div>
+<!-- Visual Flow Graph Area -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding custom-shadow mb-section-gap relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-[120px]">hub</span>
+</div>
+<div class="relative z-10 space-y-12 py-4">
+<!-- Stage 1: Raw Material -->
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-4 w-full">
+<div class="w-12 h-12 rounded-full bg-tertiary-container/20 flex items-center justify-center border-2 border-tertiary">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">foundation</span>
+</div>
+<div class="flex-1 p-3 bg-tertiary-container/10 border border-tertiary/20 rounded-lg">
+<div class="flex justify-between items-start">
+<div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-tertiary">Raw Material</span>
+<h3 class="text-body-md font-bold text-on-surface">Q235B 碳素结构钢</h3>
+</div>
+<span class="bg-tertiary/10 text-tertiary text-[10px] px-1.5 py-0.5 rounded">合格</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Vertical Connector -->
+<div class="absolute left-6 top-16 bottom-16 w-[2px] node-line -ml-[1px]"></div>
+<!-- Stage 2: Processing (Cold Heading) -->
+<div class="flex flex-col items-center relative">
+<div class="flex items-center gap-4 w-full">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-primary-container">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+</div>
+<div class="flex-1 p-3 bg-surface-container border border-outline-variant rounded-lg">
+<div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Process Stage 01</span>
+<h3 class="text-body-md font-bold text-on-surface">冷镦成型 (Cold Heading)</h3>
+<p class="text-[11px] text-on-surface-variant">通过多工位冷镦机连续挤压成型</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Stage 3: Processing (Zinc Plating) -->
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-4 w-full">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-primary-container">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">layers</span>
+</div>
+<div class="flex-1 p-3 bg-surface-container border border-outline-variant rounded-lg">
+<div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Process Stage 02</span>
+<h3 class="text-body-md font-bold text-on-surface">表面处理：镀彩锌</h3>
+<p class="text-[11px] text-on-surface-variant">增加防腐性能，盐雾测试 &gt; 72h</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Stage 4: Finished Product -->
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-4 w-full">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center border-2 border-primary shadow-sm">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">package_2</span>
+</div>
+<div class="flex-1 p-3 bg-on-primary-fixed border border-primary rounded-lg">
+<div class="flex justify-between items-center">
+<div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-primary-fixed">Finished Product</span>
+<h3 class="text-body-md font-bold text-white">膨胀螺丝 M10*80</h3>
+</div>
+<span class="material-symbols-outlined text-primary-fixed text-xl">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Detail Cards Grid (Bento Style) -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant custom-shadow col-span-2">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary text-sm">factory</span>
+<h4 class="text-label-md font-label-md">核心供应商</h4>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container" data-alt="A clean, professional headshot of a modern industrial factory building with a sleek blue glass facade under bright, clear daylight. The image should have a premium corporate feel with high contrast and sharp focus, reflecting reliability and scale." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBktvgjg-6-ei4e0GqG8VPK8veBOGqW9cJW1DYG6TMdwK7Oyb9gd1Jqpz5UaY5RlHDUqDxqK0kVsdSX2m1SVA7VJn0uW3Sng6BMINFwK0vZQFym5AF130lH7XOTPVaWlhqE6HTQOr8KwkPgFWkP6S6030vywo0hFtZmq2Ngci1FbjR-aXQuMWncmCKpIGAmj_zjZYNuSZrfQ_e5AcpSpWIG3ULUM7h97qxC1HCwDQllrdzOm06igRVZ')"></div>
+<div>
+<p class="text-body-sm font-bold">河北永年紧固件产业基地</p>
+<p class="text-[11px] text-on-surface-variant">一级优质供应商 • 深度合作</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant custom-shadow">
+<p class="text-[11px] text-on-surface-variant mb-1">材质标准</p>
+<p class="text-body-md font-bold">GB/T 3098.1</p>
+<p class="text-[10px] text-tertiary mt-2">符合国家标准</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant custom-shadow">
+<p class="text-[11px] text-on-surface-variant mb-1">检测次数</p>
+<p class="text-body-md font-bold">12 道全检</p>
+<p class="text-[10px] text-on-surface-variant mt-2">合格率 99.8%</p>
+</div>
+</div>
+<!-- Map Section (Regional Distribution) -->
+<section class="mt-section-gap mb-8">
+<div class="flex items-center justify-between mb-stack-gap">
+<h3 class="text-label-md font-label-md text-on-surface">产业分布地图</h3>
+<span class="text-[11px] text-primary font-bold">查看详情</span>
+</div>
+<div class="w-full h-40 rounded-xl bg-surface-container border border-outline-variant overflow-hidden relative">
+<div class="absolute inset-0 bg-cover bg-center opacity-40" data-alt="A stylized, minimalist vector map of China with a focused glow on the Handan region in Hebei province. The map uses a palette of soft grays and yellows, with subtle tech-inspired network lines connecting the manufacturing hub to other major cities." data-location="Handan, China" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC2ZzbwUmJSSxA6Oh0wc1UTq5BItX-PqBf9OxmEfl87ijkxO7kXktkMD2PjpomylXNi9Fp1k-yEgN52lwXx1LjXDY2ZY3YnnVKcmx22NQb6kyVjgFpNEDdmd9JTA30l7-b8j5tdIjWQOTRB8azLJfsMRxGEIGyQ1QtOakY67J5Wb6iD5xRCQ_cwh53s48xOwNdFFZ14zdppl814Q10EjQ8SKtk-xqMsQyX_VWeIQs0ABVL0tzyRntIO')"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-primary/20 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-sm font-bold">邯郸永年生产基地</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant" href="#">
+<span class="material-symbols-outlined">home_storage</span>
+<span class="text-label-sm font-label-sm">五金</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant" href="#">
+<span class="material-symbols-outlined">manage_search</span>
+<span class="text-label-sm font-label-sm">寻源</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="text-label-sm font-label-sm">溯源</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-sm font-label-sm">我的</span>
+</a>
+</nav>
+<!-- One-click Sourcing Floating Action Area -->
+<div class="fixed bottom-20 left-0 w-full px-container-margin z-40">
+<button class="w-full h-14 bg-primary-container text-on-primary-container font-headline-md text-[18px] font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+            一键寻源
+        </button>
+</div>
+<script>
+        // Simple interaction for chips
+        const buttons = document.querySelectorAll('.flex.gap-stack-gap button');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => {
+                    b.classList.remove('bg-primary-container', 'text-on-primary-container', 'active-tab');
+                    b.classList.add('bg-surface-container-lowest', 'border', 'border-outline-variant', 'text-on-surface-variant');
+                });
+                btn.classList.remove('bg-surface-container-lowest', 'border', 'border-outline-variant', 'text-on-surface-variant');
+                btn.classList.add('bg-primary-container', 'text-on-primary-container', 'active-tab');
+            });
+        });
+
+        // Atmospheric fade-in effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.bg-surface-container-lowest');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(10px)';
+                el.style.transition = `all 0.4s ease ${index * 0.1}s`;
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100);
+            });
+        });
+    </script>
+</body></html>

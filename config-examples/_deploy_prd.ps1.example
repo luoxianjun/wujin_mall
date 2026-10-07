@@ -1,0 +1,53 @@
+$server = "47.94.134.204"
+$user = "root"
+$pass = "REPLACE_WITH_CREDENTIAL"
+$remotePath = "/usr/share/nginx/html/prd"
+
+# Files to deploy
+$files = @(
+    "PRD_三泳道动态分类与产业链溯源系统.html",
+    "sample_data_visualization.html"
+)
+
+Write-Host "=== Deploying PRD to $server ===" -ForegroundColor Cyan
+
+# Use sshpass-equivalent via plink/pscp or build expect-like via ssh
+# Since Windows may not have sshpass, use scp with password via env
+$env:SSHPASS = $pass
+
+# Create remote directory
+Write-Host "[1/3] Creating remote directory..." -ForegroundColor Yellow
+echo y | & ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL "${user}@${server}" "mkdir -p ${remotePath}" 2>$null
+
+# Upload files using scp
+Write-Host "[2/3] Uploading files..." -ForegroundColor Yellow
+foreach ($file in $files) {
+    $localFile = Join-Path "e:\workspace\WuJin_Mall" $file
+    Write-Host "  Uploading: $file"
+    & scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL "$localFile" "${user}@${server}:${remotePath}/"
+}
+
+# Configure nginx
+Write-Host "[3/3] Configuring nginx..." -ForegroundColor Yellow
+$nginxConf = @"
+server {
+    listen 8088;
+    server_name _;
+    root ${remotePath};
+    index PRD_三泳道动态分类与产业链溯源系统.html;
+    charset utf-8;
+    location / {
+        try_files `\$uri `\$uri/ =404;
+    }
+}
+"@
+
+& ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL "${user}@${server}" @"
+echo '$nginxConf' > /etc/nginx/conf.d/prd.conf
+nginx -t && nginx -s reload 2>/dev/null || systemctl restart nginx
+echo 'Nginx configured and reloaded!'
+"@
+
+Write-Host ""
+Write-Host "=== Deployment Complete ===" -ForegroundColor Green
+Write-Host "Access at: http://${server}:8088/" -ForegroundColor Cyan

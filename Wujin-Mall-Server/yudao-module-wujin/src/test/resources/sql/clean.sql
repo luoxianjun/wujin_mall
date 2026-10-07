@@ -1,0 +1,14 @@
+DELETE FROM "wujin_monitor_snapshot";
+DELETE FROM "wujin_sourcing_lead";
+DELETE FROM "wujin_search_behavior_log";
+DELETE FROM "wujin_search_rule_config";
+DELETE FROM "wujin_relation_audit_record";
+DELETE FROM "wujin_merchant_supply_capability";
+DELETE FROM "wujin_merchant_relation_item";
+DELETE FROM "wujin_merchant_relation_submission";
+DELETE FROM "wujin_industry_template_item";
+DELETE FROM "wujin_industry_template";
+DELETE FROM "wujin_chain_entity_relation";
+DELETE FROM "wujin_chain_entity";
+DELETE FROM "wujin_category_mapping";
+DELETE FROM "wujin_category";

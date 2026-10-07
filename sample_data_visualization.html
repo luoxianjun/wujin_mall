@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三泳道产业链 — 样例数据关系图</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2035;
+            --bg-card-hover: #1f2847;
+            --border: rgba(255,255,255,0.08);
+            --text-primary: #f0f2f5;
+            --text-secondary: #8b95a5;
+            --text-muted: #5a6478;
+
+            /* Lane Colors */
+            --lane-product: #3b82f6;
+            --lane-product-bg: rgba(59,130,246,0.12);
+            --lane-product-glow: rgba(59,130,246,0.3);
+            --lane-process: #f59e0b;
+            --lane-process-bg: rgba(245,158,11,0.12);
+            --lane-process-glow: rgba(245,158,11,0.3);
+            --lane-material: #10b981;
+            --lane-material-bg: rgba(16,185,129,0.12);
+            --lane-material-glow: rgba(16,185,129,0.3);
+            --lane-equipment: #8b5cf6;
+            --lane-equipment-bg: rgba(139,92,246,0.12);
+            --lane-equipment-glow: rgba(139,92,246,0.3);
+
+            --accent: #6366f1;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.06) 50%, rgba(16,185,129,0.05) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 28px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-left p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .lane-legend {
+            display: flex;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .legend-item.active {
+            border-color: currentColor;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* ===== Main Layout ===== */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 0;
+            height: calc(100vh - 90px);
+        }
+
+        /* ===== Graph Area ===== */
+        .graph-area {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse at 30% 40%, rgba(99,102,241,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(16,185,129,0.03) 0%, transparent 60%);
+        }
+
+        .graph-area svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        /* ===== Tabs ===== */
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            z-index: 10;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover { color: var(--text-primary); }
+
+        .tab-btn.active {
+            color: var(--accent);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            width: 60%;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 1px;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== Entity Cards ===== */
+        .entity-section {
+            padding: 16px 20px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title .count {
+            background: rgba(255,255,255,0.06);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+
+        .entity-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .entity-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .entity-card.lane-product::before { background: var(--lane-product); }
+        .entity-card.lane-process::before { background: var(--lane-process); }
+        .entity-card.lane-material::before { background: var(--lane-material); }
+        .entity-card.lane-equipment::before { background: var(--lane-equipment); }
+
+        .entity-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateX(2px);
+        }
+
+        .entity-card.highlighted {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(99,102,241,0.15);
+        }
+
+        .entity-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .entity-card .entity-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .entity-card .entity-code {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: rgba(255,255,255,0.04);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .entity-card .entity-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .lane-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .lane-badge.product { background: var(--lane-product-bg); color: var(--lane-product); }
+        .lane-badge.process { background: var(--lane-process-bg); color: var(--lane-process); }
+        .lane-badge.material { background: var(--lane-material-bg); color: var(--lane-material); }
+        .lane-badge.equipment { background: var(--lane-equipment-bg); color: var(--lane-equipment); }
+
+        .industry-tag {
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.04);
+            padding: 2px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .entity-card .category-path {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .category-path .sep {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* ===== Relation table ===== */
+        .relation-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .relation-table th {
+            text-align: left;
+            padding: 10px 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+            position: sticky;
+            top: 44px;
+            z-index: 5;
+        }
+
+        .relation-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .relation-table tr:hover td {
+            background: rgba(255,255,255,0.02);
+            color: var(--text-primary);
+        }
+
+        .rel-type {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .rel-type.material { background: var(--lane-material-bg); color: var(--lane-material); }
+        .rel-type.process { background: var(--lane-process-bg); color: var(--lane-process); }
+        .rel-type.equipment { background: var(--lane-equipment-bg); color: var(--lane-equipment); }
+
+        .weight-bar {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        .weight-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--accent);
+        }
+
+        /* ===== Node tooltip ===== */
+        .node-tooltip {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: all 0.25s ease;
+            z-index: 999;
+            min-width: 220px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            backdrop-filter: blur(12px);
+        }
+
+        .node-tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .node-tooltip .tt-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .node-tooltip .tt-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== SVG Styles ===== */
+        .link {
+            fill: none;
+            stroke-opacity: 0.35;
+            transition: stroke-opacity 0.3s;
+        }
+
+        .link:hover {
+            stroke-opacity: 0.8;
+        }
+
+        .link-label {
+            font-size: 9px;
+            fill: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .node-group { cursor: pointer; }
+
+        .node-circle {
+            stroke-width: 2;
+            transition: all 0.3s;
+        }
+
+        .node-group:hover .node-circle {
+            stroke-width: 3;
+            filter: brightness(1.2);
+        }
+
+        .node-group.dimmed .node-circle {
+            opacity: 0.15;
+        }
+
+        .node-group.dimmed .node-label {
+            opacity: 0.1;
+        }
+
+        .link.dimmed {
+            stroke-opacity: 0.05;
+        }
+
+        .node-label {
+            font-size: 11px;
+            font-weight: 500;
+            fill: var(--text-primary);
+            pointer-events: none;
+            text-anchor: middle;
+            transition: opacity 0.3s;
+        }
+
+        .node-sublabel {
+            font-size: 9px;
+            fill: var(--text-muted);
+            pointer-events: none;
+            text-anchor: middle;
+        }
+
+        /* Edge arrow marker */
+        marker path {
+            fill: rgba(255,255,255,0.35);
+        }
+
+        /* ===== Floating Stats ===== */
+        .floating-stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat-pill {
+            background: rgba(17,24,39,0.85);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-pill .stat-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* ===== Animations ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .entity-card {
+            animation: fadeInUp 0.4s ease backwards;
+        }
+
+        .entity-card:nth-child(1) { animation-delay: 0.05s; }
+        .entity-card:nth-child(2) { animation-delay: 0.1s; }
+        .entity-card:nth-child(3) { animation-delay: 0.15s; }
+        .entity-card:nth-child(4) { animation-delay: 0.2s; }
+        .entity-card:nth-child(5) { animation-delay: 0.25s; }
+
+        /* ===== JSON Preview ===== */
+        .json-section {
+            padding: 16px 20px;
+        }
+
+        .json-block {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 11px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .json-block .key { color: #93c5fd; }
+        .json-block .str { color: #86efac; }
+        .json-block .num { color: #fbbf24; }
+        .json-block .arr { color: #c4b5fd; }
+        .json-block .bool { color: #f472b6; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <h1>三泳道产业链 · 样例数据关系图</h1>
+        <p>实体关系网络 (ERN) — 有向无环图 (DAG) 可视化</p>
+    </div>
+    <div class="lane-legend">
+        <div class="legend-item active" data-lane="product" onclick="toggleLane('product')">
+            <span class="legend-dot" style="background:var(--lane-product)"></span>
+            成品泳道
+        </div>
+        <div class="legend-item active" data-lane="process" onclick="toggleLane('process')">
+            <span class="legend-dot" style="background:var(--lane-process)"></span>
+            加工泳道
+        </div>
+        <div class="legend-item active" data-lane="material" onclick="toggleLane('material')">
+            <span class="legend-dot" style="background:var(--lane-material)"></span>
+            原材料泳道
+        </div>
+        <div class="legend-item active" data-lane="equipment" onclick="toggleLane('equipment')">
+            <span class="legend-dot" style="background:var(--lane-equipment)"></span>
+            设备
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <!-- Graph Area -->
+    <div class="graph-area" id="graphArea">
+        <svg id="graphSvg"></svg>
+        <div class="node-tooltip" id="tooltip"></div>
+        <div class="floating-stats">
+            <div class="stat-pill">
+                <span>实体</span>
+                <span class="stat-value" id="statEntities">0</span>
+            </div>
+            <div class="stat-pill">
+                <span>关系</span>
+                <span class="stat-value" id="statRelations">0</span>
+            </div>
+            <div class="stat-pill">
+                <span>交汇点</span>
+                <span class="stat-value" id="statJunctions">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('entities')">实体列表</button>
+            <button class="tab-btn" onclick="switchTab('relations')">关系边</button>
+            <button class="tab-btn" onclick="switchTab('json')">JSON 数据</button>
+        </div>
+
+        <div class="tab-content active" id="tab-entities"></div>
+        <div class="tab-content" id="tab-relations"></div>
+        <div class="tab-content" id="tab-json"></div>
+    </div>
+</div>
+
+<script>
+// ===================================================================
+// SAMPLE DATA — 三泳道产业链样例数据
+// ===================================================================
+
+const LANE_MAP = {
+    '成品': 'product',
+    '加工': 'process',
+    '原材料': 'material',
+    '设备': 'equipment'
+};
+
+const LANE_COLORS = {
+    product: '#3b82f6',
+    process: '#f59e0b',
+    material: '#10b981',
+    equipment: '#8b5cf6'
+};
+
+const LANE_LABELS = {
+    product: '成品',
+    process: '加工',
+    material: '原材料',
+    equipment: '设备'
+};
+
+// ===== 实体样例数据 =====
+const entities = [
+    // ── 成品泳道 ──
+    {
+        entity_id: "E_001",
+        name: "汽车轮胎",
+        primary_lane: "成品",
+        secondary_lanes: [],
+        category_path: "汽车配件 > 轮胎 > 乘用车轮胎",
+        industry_tags: ["汽车制造", "交通运输"],
+        description: "乘用车全季节子午线轮胎"
+    },
+    {
+        entity_id: "E_002",
+        name: "医用乳胶手套",
+        primary_lane: "成品",
+        secondary_lanes: [],
+        category_path: "医疗器械 > 一次性耗材 > 乳胶手套",
+        industry_tags: ["医疗器械", "防护用品"],
+        description: "一次性医用检查手套（灭菌）"
+    },
+    {
+        entity_id: "E_003",
+        name: "输送带",
+        primary_lane: "成品",
+        secondary_lanes: [],
+        category_path: "工业配件 > 传动件 > 输送带",
+        industry_tags: ["矿业", "物流"],
+        description: "耐磨型橡胶输送带"
+    },
+
+    // ── 加工泳道 ──
+    {
+        entity_id: "E_101",
+        name: "混炼工艺",
+        primary_lane: "加工",
+        secondary_lanes: [],
+        category_path: "橡胶加工 > 混炼工艺",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "将生胶与配合剂均匀混合的加工工艺"
+    },
+    {
+        entity_id: "E_102",
+        name: "压延工艺",
+        primary_lane: "加工",
+        secondary_lanes: [],
+        category_path: "橡胶加工 > 压延工艺",
+        industry_tags: ["轮胎", "输送带"],
+        description: "将胶料压成薄片或贴合骨架材料"
+    },
+    {
+        entity_id: "E_103",
+        name: "成型工艺",
+        primary_lane: "加工",
+        secondary_lanes: [],
+        category_path: "橡胶加工 > 成型工艺",
+        industry_tags: ["轮胎"],
+        description: "将各部件贴合组装为轮胎胎胚"
+    },
+    {
+        entity_id: "E_104",
+        name: "硫化工艺",
+        primary_lane: "加工",
+        secondary_lanes: [],
+        category_path: "橡胶加工 > 硫化工艺",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "高温高压使橡胶交联定型的核心工艺"
+    },
+    {
+        entity_id: "E_105",
+        name: "浸渍工艺",
+        primary_lane: "加工",
+        secondary_lanes: [],
+        category_path: "橡胶加工 > 浸渍工艺",
+        industry_tags: ["医用制品", "防护用品"],
+        description: "将模具浸入胶乳中制成薄膜制品"
+    },
+
+    // ── 原材料泳道 ──
+    {
+        entity_id: "E_201",
+        name: "天然橡胶",
+        primary_lane: "原材料",
+        secondary_lanes: ["成品"],
+        category_path: "橡胶材料 > 天然橡胶",
+        industry_tags: ["轮胎", "医用制品", "输送带"],
+        description: "从橡胶树割取的天然高弹性体，核心交汇点实体"
+    },
+    {
+        entity_id: "E_2011",
+        name: "STR20 标准胶",
+        primary_lane: "原材料",
+        secondary_lanes: ["成品"],
+        category_path: "橡胶材料 > 天然橡胶 > STR20",
+        industry_tags: ["轮胎", "输送带"],
+        description: "泰国标准胶，杂质含量≤0.05%，适用于轮胎"
+    },
+    {
+        entity_id: "E_2012",
+        name: "RSS3 烟片胶",
+        primary_lane: "原材料",
+        secondary_lanes: ["成品"],
+        category_path: "橡胶材料 > 天然橡胶 > RSS3",
+        industry_tags: ["轮胎"],
+        description: "烟片胶，期货交割品质，拉伸性优秀"
+    },
+    {
+        entity_id: "E_2013",
+        name: "浓缩胶乳",
+        primary_lane: "原材料",
+        secondary_lanes: ["成品"],
+        category_path: "橡胶材料 > 天然橡胶 > SVR3L浓缩胶乳",
+        industry_tags: ["医用制品", "防护用品"],
+        description: "高纯度浓缩胶乳，蛋白≤0.5%，FDA认证"
+    },
+    {
+        entity_id: "E_202",
+        name: "钢丝帘线",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "骨架材料 > 钢丝帘线",
+        industry_tags: ["轮胎"],
+        description: "高强度镀铜钢丝帘线，增强轮胎骨架结构"
+    },
+    {
+        entity_id: "E_203",
+        name: "炭黑 N330",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "炭黑 > N330 通用型",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "通用型增强炭黑，补强填充效果好"
+    },
+    {
+        entity_id: "E_204",
+        name: "硫化剂",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "化工助剂 > 硫化剂",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "硫磺基硫化剂，促使橡胶交联"
+    },
+    {
+        entity_id: "E_205",
+        name: "促进剂",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "化工助剂 > 促进剂",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "加速硫化的有机化学品"
+    },
+    {
+        entity_id: "E_206",
+        name: "合成橡胶(丁苯)",
+        primary_lane: "原材料",
+        secondary_lanes: ["成品"],
+        category_path: "橡胶材料 > 合成橡胶 > 丁苯橡胶",
+        industry_tags: ["轮胎", "输送带"],
+        description: "丁苯橡胶，常与天然橡胶并用"
+    },
+
+    // ── 上游原料 ──
+    {
+        entity_id: "E_501",
+        name: "橡胶树胶乳",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "天然原料 > 橡胶树胶乳",
+        industry_tags: ["橡胶种植"],
+        description: "橡胶树直接割取的天然乳液"
+    },
+    {
+        entity_id: "E_503",
+        name: "石油焦",
+        primary_lane: "原材料",
+        secondary_lanes: [],
+        category_path: "石化原料 > 石油焦",
+        industry_tags: ["石化", "炭黑生产"],
+        description: "炭黑的上游原料，石油炼制副产物"
+    },
+
+    // ── 设备 ──
+    {
+        entity_id: "E_301",
+        name: "硫化机",
+        primary_lane: "设备",
+        secondary_lanes: [],
+        category_path: "橡胶设备 > 硫化设备 > 硫化机",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "提供高温高压环境进行硫化的专用设备"
+    },
+    {
+        entity_id: "E_302",
+        name: "密炼机",
+        primary_lane: "设备",
+        secondary_lanes: [],
+        category_path: "橡胶设备 > 混炼设备 > 密炼机",
+        industry_tags: ["轮胎", "橡胶制品"],
+        description: "用于密闭式混炼的橡胶加工设备"
+    }
+];
+
+// ===== 关系边样例数据 =====
+const relations = [
+    // 汽车轮胎的关系
+    { source: "E_001", target: "E_104", type: "需要工艺", weight: 0.95, industry: "轮胎", cost_ratio: null },
+    { source: "E_001", target: "E_103", type: "需要工艺", weight: 0.90, industry: "轮胎", cost_ratio: null },
+    { source: "E_001", target: "E_102", type: "需要工艺", weight: 0.80, industry: "轮胎", cost_ratio: null },
+    { source: "E_001", target: "E_101", type: "需要工艺", weight: 0.85, industry: "轮胎", cost_ratio: null },
+    { source: "E_001", target: "E_201", type: "需要材料", weight: 0.90, industry: "轮胎", cost_ratio: 28 },
+    { source: "E_001", target: "E_203", type: "需要材料", weight: 0.80, industry: "轮胎", cost_ratio: 26 },
+    { source: "E_001", target: "E_202", type: "需要材料", weight: 0.75, industry: "轮胎", cost_ratio: 18 },
+    { source: "E_001", target: "E_204", type: "需要材料", weight: 0.60, industry: "轮胎", cost_ratio: 8 },
+    { source: "E_001", target: "E_206", type: "需要材料", weight: 0.70, industry: "轮胎", cost_ratio: 15 },
+
+    // 医用乳胶手套的关系
+    { source: "E_002", target: "E_105", type: "需要工艺", weight: 0.95, industry: "医用制品", cost_ratio: null },
+    { source: "E_002", target: "E_2013", type: "需要材料", weight: 0.95, industry: "医用制品", cost_ratio: 85 },
+
+    // 输送带的关系
+    { source: "E_003", target: "E_101", type: "需要工艺", weight: 0.80, industry: "输送带", cost_ratio: null },
+    { source: "E_003", target: "E_104", type: "需要工艺", weight: 0.85, industry: "输送带", cost_ratio: null },
+    { source: "E_003", target: "E_201", type: "需要材料", weight: 0.80, industry: "输送带", cost_ratio: 35 },
+    { source: "E_003", target: "E_206", type: "需要材料", weight: 0.70, industry: "输送带", cost_ratio: 25 },
+
+    // 工艺的上游关系
+    { source: "E_104", target: "E_301", type: "需要设备", weight: 0.95, industry: "通用", cost_ratio: null },
+    { source: "E_104", target: "E_204", type: "需要材料", weight: 0.90, industry: "通用", cost_ratio: null },
+    { source: "E_104", target: "E_205", type: "需要材料", weight: 0.80, industry: "通用", cost_ratio: null },
+    { source: "E_101", target: "E_302", type: "需要设备", weight: 0.90, industry: "通用", cost_ratio: null },
+
+    // 天然橡胶的规格关系
+    { source: "E_201", target: "E_2011", type: "需要材料", weight: 0.60, industry: "轮胎", cost_ratio: null },
+    { source: "E_201", target: "E_2012", type: "需要材料", weight: 0.50, industry: "轮胎", cost_ratio: null },
+    { source: "E_201", target: "E_2013", type: "需要材料", weight: 0.50, industry: "医用制品", cost_ratio: null },
+
+    // 更上游的原料链
+    { source: "E_201", target: "E_501", type: "需要材料", weight: 0.95, industry: "通用", cost_ratio: null },
+    { source: "E_203", target: "E_503", type: "需要材料", weight: 0.90, industry: "通用", cost_ratio: null },
+];
+
+
+// ===================================================================
+// RENDERING
+// ===================================================================
+
+function getLaneClass(entity) {
+    return LANE_MAP[entity.primary_lane] || 'material';
+}
+
+function getLaneColor(entity) {
+    return LANE_COLORS[getLaneClass(entity)] || LANE_COLORS.material;
+}
+
+// ===== Render Sidebar Entity List =====
+function renderEntityList() {
+    const container = document.getElementById('tab-entities');
+    const groups = { product: [], process: [], material: [], equipment: [] };
+
+    entities.forEach(e => {
+        const lane = getLaneClass(e);
+        if (groups[lane]) groups[lane].push(e);
+        else groups.material.push(e);
+    });
+
+    const groupLabels = {
+        product: '🏭 成品泳道',
+        process: '⚙️ 加工泳道',
+        material: '🧪 原材料泳道',
+        equipment: '🔧 设备'
+    };
+
+    let html = '';
+    for (const [lane, items] of Object.entries(groups)) {
+        if (items.length === 0) continue;
+        html += `<div class="entity-section">
+            <div class="section-title">
+                ${groupLabels[lane]}
+                <span class="count">${items.length}</span>
+            </div>`;
+        items.forEach(e => {
+            const pathParts = e.category_path.split(' > ');
+            html += `<div class="entity-card lane-${lane}" data-id="${e.entity_id}"
+                          onmouseenter="highlightNode('${e.entity_id}')"
+                          onmouseleave="clearHighlight()">
+                <div class="card-header">
+                    <span class="entity-name">${e.name}</span>
+                    <span class="entity-code">${e.entity_id}</span>
+                </div>
+                <div class="entity-meta">
+                    <span class="lane-badge ${lane}">${LANE_LABELS[lane]}</span>
+                    ${e.secondary_lanes.map(s => `<span class="lane-badge ${LANE_MAP[s]}">${s}(副)</span>`).join('')}
+                    ${e.industry_tags.map(t => `<span class="industry-tag">${t}</span>`).join('')}
+                </div>
+                <div class="category-path">
+                    ${pathParts.map((p,i) => `${i>0?'<span class="sep">›</span>':''}${p}`).join('')}
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    container.innerHTML = html;
+}
+
+// ===== Render Relations Table =====
+function renderRelationsTable() {
+    const container = document.getElementById('tab-relations');
+    const entityMap = {};
+    entities.forEach(e => entityMap[e.entity_id] = e);
+
+    const relTypeClass = {
+        '需要材料': 'material',
+        '需要工艺': 'process',
+        '需要设备': 'equipment'
+    };
+
+    let html = `<table class="relation-table">
+        <thead>
+            <tr>
+                <th>下游(源)</th>
+                <th>关系</th>
+                <th>上游(目标)</th>
+                <th>权重</th>
+                <th>行业</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    relations.forEach(r => {
+        const src = entityMap[r.source];
+        const tgt = entityMap[r.target];
+        if (!src || !tgt) return;
+
+        html += `<tr>
+            <td style="color:${getLaneColor(src)}">${src.name}</td>
+            <td><span class="rel-type ${relTypeClass[r.type] || ''}">${r.type}</span></td>
+            <td style="color:${getLaneColor(tgt)}">${tgt.name}</td>
+            <td>
+                ${r.weight.toFixed(2)}
+                <span class="weight-bar"><span class="weight-bar-fill" style="width:${r.weight*100}%"></span></span>
+                ${r.cost_ratio ? `<br><span style="font-size:10px;color:var(--text-muted)">占比${r.cost_ratio}%</span>` : ''}
+            </td>
+            <td><span class="industry-tag">${r.industry}</span></td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// ===== Render JSON Preview =====
+function renderJsonPreview() {
+    const container = document.getElementById('tab-json');
+    const sampleEntity = entities[0];
+
+    const sampleJson = {
+        entity_id: sampleEntity.entity_id,
+        name: sampleEntity.name,
+        primary_lane: sampleEntity.primary_lane,
+        secondary_lanes: sampleEntity.secondary_lanes,
+        category_path: sampleEntity.category_path,
+        industry_tags: sampleEntity.industry_tags,
+        upstream_edges: relations.filter(r => r.source === sampleEntity.entity_id).map(r => ({
+            target_entity_id: r.target,
+            target_name: entities.find(e => e.entity_id === r.target)?.name,
+            relation_type: r.type,
+            weight: r.weight,
+            industry_context: r.industry,
+            cost_ratio: r.cost_ratio
+        }))
+    };
+
+    function syntaxHighlight(json) {
+        let str = JSON.stringify(json, null, 2);
+        str = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return str.replace(
+            /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|\[|\])/g,
+            function (match) {
+                let cls = 'num';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) cls = 'key';
+                    else cls = 'str';
+                } else if (/true|false/.test(match)) cls = 'bool';
+                else if (/null/.test(match)) cls = 'bool';
+                else if (/[\[\]]/.test(match)) cls = 'arr';
+                return `<span class="${cls}">${match}</span>`;
+            }
+        );
+    }
+
+    container.innerHTML = `
+        <div class="json-section">
+            <div class="section-title">汽车轮胎 (E_001) 的完整实体数据</div>
+            <div class="json-block">${syntaxHighlight(sampleJson)}</div>
+        </div>
+        <div class="json-section">
+            <div class="section-title">所有实体数据 (${entities.length} 个)</div>
+            <div class="json-block">${syntaxHighlight(entities)}</div>
+        </div>
+    `;
+}
+
+// ===== Tab Switching =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', ['entities','relations','json'][i] === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// ===== Render Force-Directed Graph =====
+function renderGraph() {
+    const svg = document.getElementById('graphSvg');
+    const rect = svg.parentElement.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    // Build node/link structures
+    const entityMap = {};
+    entities.forEach(e => entityMap[e.entity_id] = e);
+
+    const nodes = entities.map(e => ({
+        id: e.entity_id,
+        name: e.name,
+        lane: getLaneClass(e),
+        color: getLaneColor(e),
+        entity: e,
+        x: width / 2 + (Math.random() - 0.5) * 300,
+        y: height / 2 + (Math.random() - 0.5) * 300
+    }));
+
+    const nodeMap = {};
+    nodes.forEach(n => nodeMap[n.id] = n);
+
+    const links = relations.map(r => ({
+        source: nodeMap[r.source],
+        target: nodeMap[r.target],
+        type: r.type,
+        weight: r.weight,
+        industry: r.industry,
+        cost_ratio: r.cost_ratio
+    })).filter(l => l.source && l.target);
+
+    // Position nodes by lane (swim lanes top to bottom)
+    const lanePositions = {
+        product: height * 0.18,
+        process: height * 0.42,
+        material: height * 0.65,
+        equipment: height * 0.88
+    };
+
+    nodes.forEach((n, i) => {
+        const sameLane = nodes.filter(nn => nn.lane === n.lane);
+        const idx = sameLane.indexOf(n);
+        const spacing = Math.min(width / (sameLane.length + 1), 180);
+        const offset = (width - spacing * (sameLane.length - 1)) / 2;
+        n.x = offset + idx * spacing;
+        n.y = lanePositions[n.lane] + (Math.random() - 0.5) * 30;
+    });
+
+    // Simple force simulation
+    function simulate() {
+        for (let iter = 0; iter < 80; iter++) {
+            // Repulsion between nodes
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    let dx = nodes[j].x - nodes[i].x;
+                    let dy = nodes[j].y - nodes[i].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    let force = 3000 / (dist * dist);
+                    let fx = dx / dist * force;
+                    let fy = dy / dist * force;
+                    nodes[i].x -= fx;
+                    nodes[i].y -= fy;
+                    nodes[j].x += fx;
+                    nodes[j].y += fy;
+                }
+            }
+
+            // Link attraction (weaker)
+            links.forEach(l => {
+                let dx = l.target.x - l.source.x;
+                let dy = l.target.y - l.source.y;
+                let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                let force = (dist - 150) * 0.003;
+                let fx = dx / dist * force;
+                let fy = dy / dist * force;
+                l.source.x += fx;
+                l.source.y += fy * 0.1; // weaker vertical pull
+                l.target.x -= fx;
+                l.target.y -= fy * 0.1;
+            });
+
+            // Lane gravity (keep nodes in their swim lane)
+            nodes.forEach(n => {
+                const targetY = lanePositions[n.lane];
+                n.y += (targetY - n.y) * 0.12;
+            });
+
+            // Boundary constraints
+            nodes.forEach(n => {
+                n.x = Math.max(60, Math.min(width - 60, n.x));
+                n.y = Math.max(40, Math.min(height - 40, n.y));
+            });
+        }
+    }
+
+    simulate();
+
+    // Arrow marker
+    let defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+    // Create a marker for each color
+    const markerColors = {
+        'material': LANE_COLORS.material,
+        'process': LANE_COLORS.process,
+        'equipment': LANE_COLORS.equipment
+    };
+    for (const [key, color] of Object.entries(markerColors)) {
+        let marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', `arrow-${key}`);
+        marker.setAttribute('viewBox', '0 0 10 6');
+        marker.setAttribute('refX', '10');
+        marker.setAttribute('refY', '3');
+        marker.setAttribute('markerWidth', '8');
+        marker.setAttribute('markerHeight', '5');
+        marker.setAttribute('orient', 'auto');
+        let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M0,0 L10,3 L0,6 Z');
+        path.setAttribute('fill', color);
+        path.setAttribute('opacity', '0.5');
+        marker.appendChild(path);
+        defs.appendChild(marker);
+    }
+    svg.appendChild(defs);
+
+    // Draw swim lane background bands
+    const laneLabels = { product: '成品泳道', process: '加工泳道', material: '原材料泳道', equipment: '设备' };
+    const laneAlpha = { product: '08', process: '06', material: '06', equipment: '05' };
+
+    for (const [lane, y] of Object.entries(lanePositions)) {
+        // Band
+        let band = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        band.setAttribute('x', 0);
+        band.setAttribute('y', y - 45);
+        band.setAttribute('width', width);
+        band.setAttribute('height', 90);
+        band.setAttribute('fill', LANE_COLORS[lane] + laneAlpha[lane]);
+        band.setAttribute('rx', 0);
+        svg.appendChild(band);
+
+        // Label
+        let label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', 16);
+        label.setAttribute('y', y - 28);
+        label.setAttribute('fill', LANE_COLORS[lane]);
+        label.setAttribute('font-size', '11');
+        label.setAttribute('font-weight', '600');
+        label.setAttribute('opacity', '0.6');
+        label.textContent = laneLabels[lane];
+        svg.appendChild(label);
+    }
+
+    // Draw links
+    const relTypeMarker = {
+        '需要材料': 'material',
+        '需要工艺': 'process',
+        '需要设备': 'equipment'
+    };
+
+    links.forEach(l => {
+        const markerKey = relTypeMarker[l.type] || 'material';
+        const color = markerColors[markerKey];
+
+        // Curved path
+        const dx = l.target.x - l.source.x;
+        const dy = l.target.y - l.source.y;
+        const dr = Math.sqrt(dx * dx + dy * dy) * 0.8;
+
+        // Shorten by node radius
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const r = 20; // node radius
+        const sx = l.source.x + (dx / dist) * r;
+        const sy = l.source.y + (dy / dist) * r;
+        const tx = l.target.x - (dx / dist) * r;
+        const ty = l.target.y - (dy / dist) * r;
+
+        let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M${sx},${sy} A${dr},${dr} 0 0,1 ${tx},${ty}`);
+        path.setAttribute('class', 'link');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', 1 + l.weight * 1.5);
+        path.setAttribute('marker-end', `url(#arrow-${markerKey})`);
+        path.setAttribute('data-source', l.source.id);
+        path.setAttribute('data-target', l.target.id);
+        svg.appendChild(path);
+
+        // Cost ratio label on edge
+        if (l.cost_ratio) {
+            const mx = (sx + tx) / 2 + (ty - sy) * 0.06;
+            const my = (sy + ty) / 2 - (tx - sx) * 0.06;
+            let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', mx);
+            text.setAttribute('y', my);
+            text.setAttribute('class', 'link-label');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('data-source', l.source.id);
+            text.setAttribute('data-target', l.target.id);
+            text.textContent = `${l.cost_ratio}%`;
+            svg.appendChild(text);
+        }
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+        let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'node-group');
+        g.setAttribute('data-id', n.id);
+        g.setAttribute('transform', `translate(${n.x},${n.y})`);
+
+        // Glow
+        let glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        glow.setAttribute('r', 24);
+        glow.setAttribute('fill', n.color);
+        glow.setAttribute('opacity', '0.08');
+        g.appendChild(glow);
+
+        // Main circle
+        let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('r', 16);
+        circle.setAttribute('fill', n.color + '22');
+        circle.setAttribute('stroke', n.color);
+        circle.setAttribute('class', 'node-circle');
+        g.appendChild(circle);
+
+        // Inner dot
+        let dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', 4);
+        dot.setAttribute('fill', n.color);
+        g.appendChild(dot);
+
+        // Label
+        let label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('y', -24);
+        label.setAttribute('class', 'node-label');
+        label.textContent = n.name;
+        g.appendChild(label);
+
+        // Sub-label (code)
+        let sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        sub.setAttribute('y', 32);
+        sub.setAttribute('class', 'node-sublabel');
+        sub.textContent = n.id;
+        g.appendChild(sub);
+
+        // Events
+        g.addEventListener('mouseenter', (e) => showTooltip(e, n));
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('click', () => highlightNode(n.id));
+
+        svg.appendChild(g);
+    });
+
+    // Update stats
+    document.getElementById('statEntities').textContent = entities.length;
+    document.getElementById('statRelations').textContent = relations.length;
+    // Count junction points (entities referenced by >=2 industries)
+    const junctions = entities.filter(e => e.industry_tags.length >= 2).length;
+    document.getElementById('statJunctions').textContent = junctions;
+}
+
+// ===== Tooltip =====
+function showTooltip(event, node) {
+    const tooltip = document.getElementById('tooltip');
+    const e = node.entity;
+
+    const upstreamCount = relations.filter(r => r.source === e.entity_id).length;
+    const downstreamCount = relations.filter(r => r.target === e.entity_id).length;
+
+    tooltip.innerHTML = `
+        <div class="tt-name" style="color:${node.color}">${e.name}</div>
+        <div class="tt-meta">
+            <div><strong>编码：</strong>${e.entity_id}</div>
+            <div><strong>主泳道：</strong>${e.primary_lane}</div>
+            ${e.secondary_lanes.length ? `<div><strong>副泳道：</strong>${e.secondary_lanes.join(', ')}</div>` : ''}
+            <div><strong>分类：</strong>${e.category_path}</div>
+            <div><strong>行业：</strong>${e.industry_tags.join(', ')}</div>
+            <div><strong>描述：</strong>${e.description}</div>
+            <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;">
+                <strong>↓ 上游依赖：</strong>${upstreamCount} 个 &nbsp;
+                <strong>↑ 被依赖：</strong>${downstreamCount} 个
+            </div>
+        </div>
+    `;
+
+    const rect = document.getElementById('graphArea').getBoundingClientRect();
+    let x = event.clientX - rect.left + 16;
+    let y = event.clientY - rect.top + 16;
+
+    // Keep within bounds
+    if (x + 240 > rect.width) x = event.clientX - rect.left - 250;
+    if (y + 200 > rect.height) y = event.clientY - rect.top - 200;
+
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+    document.getElementById('tooltip').classList.remove('visible');
+}
+
+// ===== Highlight =====
+function highlightNode(entityId) {
+    const connected = new Set([entityId]);
+    relations.forEach(r => {
+        if (r.source === entityId) connected.add(r.target);
+        if (r.target === entityId) connected.add(r.source);
+    });
+
+    // Dim unconnected nodes
+    document.querySelectorAll('.node-group').forEach(g => {
+        const id = g.getAttribute('data-id');
+        g.classList.toggle('dimmed', !connected.has(id));
+    });
+
+    // Dim unconnected links
+    document.querySelectorAll('.link, .link-label').forEach(el => {
+        const src = el.getAttribute('data-source');
+        const tgt = el.getAttribute('data-target');
+        el.classList.toggle('dimmed', !(connected.has(src) && connected.has(tgt)));
+    });
+
+    // Highlight card
+    document.querySelectorAll('.entity-card').forEach(c => {
+        c.classList.toggle('highlighted', c.getAttribute('data-id') === entityId);
+    });
+}
+
+function clearHighlight() {
+    document.querySelectorAll('.node-group').forEach(g => g.classList.remove('dimmed'));
+    document.querySelectorAll('.link, .link-label').forEach(el => el.classList.remove('dimmed'));
+    document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('highlighted'));
+}
+
+// ===== Lane Toggle =====
+function toggleLane(lane) {
+    const btn = document.querySelector(`.legend-item[data-lane="${lane}"]`);
+    btn.classList.toggle('active');
+    const active = btn.classList.contains('active');
+
+    document.querySelectorAll(`.node-group`).forEach(g => {
+        const id = g.getAttribute('data-id');
+        const entity = entities.find(e => e.entity_id === id);
+        if (entity && getLaneClass(entity) === lane) {
+            g.style.display = active ? '' : 'none';
+        }
+    });
+}
+
+// ===== Init =====
+window.addEventListener('DOMContentLoaded', () => {
+    renderEntityList();
+    renderRelationsTable();
+    renderJsonPreview();
+    renderGraph();
+});
+
+window.addEventListener('resize', () => {
+    const svg = document.getElementById('graphSvg');
+    svg.innerHTML = '';
+    renderGraph();
+});
+</script>
+
+</body>
+</html>

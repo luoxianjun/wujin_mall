@@ -1,0 +1,94 @@
+-- 数据导出权限配置 SQL
+-- 说明：
+-- 1. 活动报名导出权限: forum:activity-sign-up:export
+-- 2. 积分明细导出权限: forum:point-record:export
+-- 3. 会员用户导出权限: member:user:export
+-- 
+-- 使用方式：
+-- 1. 如果使用系统菜单管理功能，可以直接在后台【系统管理->菜单管理】中添加以上权限
+-- 2. 或者将此 SQL 在数据库中执行，然后刷新权限缓存
+
+-- 注意：以下 SQL 是参考格式，实际使用时请根据系统的菜单 ID 进行调整
+-- 可通过 SELECT * FROM system_menu WHERE name LIKE '%活动%' 或类似查询获取现有菜单 ID
+
+-- ============================================
+-- 方式一：通过后台界面配置（推荐）
+-- ============================================
+-- 1. 登录管理后台
+-- 2. 前往【系统管理 -> 菜单管理】
+-- 3. 找到以下菜单并添加按钮权限：
+--    - 【论坛管理 -> 活动报名管理】-> 添加按钮权限: forum:activity-sign-up:export
+--    - 【会员管理 -> 积分记录】 -> 添加按钮权限: forum:point-record:export
+--    - 【会员管理 -> 会员用户】 -> 添加按钮权限: member:user:export
+-- 4. 将权限分配给相应角色
+
+-- ============================================
+-- 方式二：直接插入权限数据（需要根据实际情况调整）
+-- ============================================
+
+-- 假设 parent_id 是论坛管理的菜单 ID，请先通过后台或 SQL 查询获取正确的 ID
+-- SELECT id, name, parent_id FROM system_menu WHERE name = '活动报名管理';
+
+-- 示例：添加活动报名导出按钮权限（需要替换为实际的 parent_id）
+-- INSERT INTO system_menu (
+--     parent_id, 
+--     name, 
+--     permission, 
+--     sort, 
+--     path, 
+--     icon, 
+--     component, 
+--     component_name, 
+--     menu_type, 
+--     visible, 
+--     keep_alive, 
+--     always_show, 
+--     create_time, 
+--     update_time, 
+--     creator, 
+--     updater, 
+--     deleted, 
+--     tenant_id
+-- ) VALUES (
+--     现有活动报名管理的菜单ID,  -- parent_id
+--     '导出',                      -- name
+--     'forum:activity-sign-up:export',  -- permission
+--     100,                        -- sort
+--     '',                          -- path
+--     '',                          -- icon
+--     '',                          -- component
+--     NULL,                        -- component_name
+--     1,                          -- menu_type (1=按钮)
+--     '1',                         -- visible
+--     '1',                         -- keep_alive
+--     '1',                         -- always_show
+--     NOW(),                       -- create_time
+--     NOW(),                       -- update_time
+--     '',                          -- creator
+--     '',                          -- updater
+--     b'0',                       -- deleted
+--     1                           -- tenant_id
+-- );
+
+-- 示例：添加积分明细导出按钮权限
+-- INSERT INTO system_menu (...) VALUES (...);
+
+-- 示例：添加会员用户导出按钮权限
+-- INSERT INTO system_menu (...) VALUES (...);
+
+-- ============================================
+-- 方式三：如果使用 Swagger/Knife4j 文档访问权限
+-- ============================================
+-- 接口权限配置已在 Controller 的 @PreAuthorize 注解中配置：
+-- - @PreAuthorize("@ss.hasPermission('forum:activity-sign-up:export')")
+-- - @PreAuthorize("@ss.hasPermission('forum:point-record:export')")
+-- - @PreAuthorize("@ss.hasPermission('member:user:export')")
+-- 
+-- 这些权限会自动出现在 Swagger 文档的接口旁边，可通过后台菜单管理进行配置
+
+-- ============================================
+-- 刷新权限缓存（如需要）
+-- ============================================
+-- 如果系统有权限缓存，可能需要刷新缓存或重新登录
+-- DELETE FROM system_permission_cache;  -- 如果有权限缓存表
+-- 或在后台【系统管理 -> 权限配置】中刷新缓存

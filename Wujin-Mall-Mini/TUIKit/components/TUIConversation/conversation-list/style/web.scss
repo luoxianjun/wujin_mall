@@ -1,0 +1,195 @@
+.tui-conversation-list {
+  font-family: "PingFang SC", -apple-system, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.tui-conversation {
+  &-item {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: background-color 0.15s ease;
+
+    .left {
+      position: relative;
+      width: 48px;
+      height: 48px;
+
+      .num {
+        position: absolute;
+        display: inline-block;
+        right: -4px;
+        top: -4px;
+        min-width: 16px;
+        width: fit-content;
+        padding: 0 5px;
+        height: 18px;
+        font-size: 11px;
+        text-align: center;
+        line-height: 18px;
+        border-radius: 9px;
+        border: 2px solid #fff;
+        z-index: 1;
+      }
+
+      .num-notify {
+        position: absolute;
+        display: inline-block;
+        right: 2px;
+        top: -2px;
+        width: 8px;
+        height: 8px;
+        font-size: 10px;
+        text-align: center;
+        line-height: 15px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+      }
+
+      .online-status {
+        box-sizing: border-box;
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        left: 34px;
+        top: 34px;
+        border: 2px solid #fff;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+
+        &-online {
+          background: #10b981;
+        }
+
+        &-offline {
+          background: #a4a4a4;
+        }
+      }
+    }
+
+    .content-footer {
+      line-height: 18px;
+      display: flex;
+      flex-direction: column;
+
+      .time {
+        font-size: 13px;
+        line-height: 18px;
+        display: inline-block;
+        white-space: nowrap;
+      }
+    }
+
+    .content {
+      display: flex;
+      flex: 1;
+      padding-left: 14px;
+      justify-content: space-between;
+      box-sizing: border-box;
+      overflow: hidden;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+      padding-bottom: 14px;
+
+      .content-footer {
+        align-items: flex-end;
+
+        .icon {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          margin: 0;
+        }
+      }
+    }
+
+    .content-header {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
+      justify-content: center;
+      gap: 6px;
+
+      &-label {
+        flex: 1;
+        font-size: 16px;
+      }
+
+      .name {
+        width: 160px;
+        letter-spacing: 0;
+        font-size: 16px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .middle-box {
+        flex: 1;
+        display: flex;
+        align-items: center;
+
+        &-at,
+        &-draft {
+          font-size: 13px;
+        }
+
+        &-content {
+          flex: 1;
+          width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 14px;
+          line-height: 20px;
+        }
+      }
+    }
+
+    &-content {
+      position: relative;
+
+      .tui-conversation-item:hover {
+        background: rgba(16, 185, 129, 0.06);
+      }
+
+      .dialog {
+        position: absolute;
+        z-index: 5;
+        padding: 2px 20px;
+        cursor: pointer;
+
+        &-item {
+          top: 30px;
+          left: 164px;
+          border-radius: 8px;
+        }
+
+        .conversation-options {
+          padding: 5px 0;
+          height: 17px;
+          font-size: 12px;
+          line-height: 17px;
+        }
+
+        &-item-up {
+          top: -50px;
+        }
+      }
+    }
+  }
+}

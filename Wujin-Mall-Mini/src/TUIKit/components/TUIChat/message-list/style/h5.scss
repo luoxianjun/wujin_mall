@@ -1,0 +1,17 @@
+.tui-chat-h5 {
+  flex: 1;
+  position: static;
+
+  .tui-chat-main {
+    .tui-message-list {
+      height: 0;
+      min-height: 0;
+    }
+
+    .message-more {
+      color: #999;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  }
+}

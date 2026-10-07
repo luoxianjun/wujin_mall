@@ -1,0 +1,541 @@
+<#
+.SYNOPSIS
+One-click commit, push, build, deploy, and verify for the Wujin Mall SIT stack.
+
+.EXAMPLE
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\wujin-one-click-submit-deploy.ps1
+
+.EXAMPLE
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\wujin-one-click-submit-deploy.ps1 -Message "feat: update merchant publish flow"
+
+.EXAMPLE
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\wujin-one-click-submit-deploy.ps1 -DryRun
+#>
+
+param(
+  [string]$Message = '',
+  [switch]$DeployAll,
+  [switch]$SkipDeploy,
+  [switch]$SkipTests,
+  [switch]$DryRun,
+  [switch]$NoPush,
+  [string]$WorkspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
+  [string]$SshHost = '39.107.248.167',
+  [string]$SshUser = 'root',
+  [string]$SshPassword = 'REPLACE_WITH_CREDENTIAL'
+)
+
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
+$Repos = @(
+  @{
+    Key = 'server'
+    Name = 'Wujin-Mall-Server'
+    Path = 'Wujin-Mall-Server'
+    DefaultMessage = 'chore: update wujin mall server'
+    DeployTarget = 'server'
+  },
+  @{
+    Key = 'platform'
+    Name = 'Wujin-Mall-Platform-Web'
+    Path = 'Wujin-Mall-Platform-Web'
+    DefaultMessage = 'chore: update wujin mall platform web'
+    DeployTarget = 'platform'
+  },
+  @{
+    Key = 'merchant'
+    Name = 'Wujin-Mall-Merchant-Web'
+    Path = 'Wujin-Mall-Merchant-Web'
+    DefaultMessage = 'chore: update wujin mall merchant web'
+    DeployTarget = 'merchant'
+  },
+  @{
+    Key = 'mini'
+    Name = 'Wujin-Mall-Mini'
+    Path = 'Wujin-Mall-Mini'
+    DefaultMessage = 'chore: update wujin mall mini app'
+    DeployTarget = $null
+  }
+)
+
+function Write-Step {
+  param([string]$Message)
+  Write-Host ''
+  Write-Host "==> $Message" -ForegroundColor Cyan
+}
+
+function Write-Info {
+  param([string]$Message)
+  Write-Host "    $Message"
+}
+
+function Invoke-CheckedCommand {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$FilePath,
+    [string[]]$ArgumentList = @(),
+    [string]$WorkingDirectory = $WorkspaceRoot,
+    [switch]$AllowFailure,
+    [switch]$SkipOnDryRun
+  )
+
+  $display = "$FilePath $($ArgumentList -join ' ')".Trim()
+  Write-Info $display
+
+  if ($DryRun -and $SkipOnDryRun) {
+    Write-Info '[dry-run] skipped'
+    $script:LastCommandExitCode = 0
+    return ''
+  }
+
+  Push-Location -LiteralPath $WorkingDirectory
+  $previousErrorActionPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = 'Continue'
+    $output = & $FilePath @ArgumentList 2>&1
+    $code = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+    Pop-Location
+  }
+
+  $script:LastCommandExitCode = $code
+
+  if ($output) {
+    $output | ForEach-Object { Write-Host $_ }
+  }
+
+  if ($code -ne 0 -and -not $AllowFailure) {
+    throw "Command failed with exit code $code`: $display"
+  }
+
+  return ($output -join [Environment]::NewLine)
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$Repo,
+    [Parameter(Mandatory = $true)]
+    [string[]]$Args,
+    [switch]$AllowFailure,
+    [switch]$SkipOnDryRun
+  )
+
+  $repoPath = Join-Path $WorkspaceRoot $Repo.Path
+  return Invoke-CheckedCommand `
+    -FilePath 'git' `
+    -ArgumentList (@('-C', $repoPath) + $Args) `
+    -WorkingDirectory $WorkspaceRoot `
+    -AllowFailure:$AllowFailure `
+    -SkipOnDryRun:$SkipOnDryRun
+}
+
+function Get-RepoChangeState {
+  param([Parameter(Mandatory = $true)][hashtable]$Repo)
+
+  $inside = Invoke-Git -Repo $Repo -Args @('rev-parse', '--is-inside-work-tree')
+  if (($inside.Trim()) -ne 'true') {
+    throw "$($Repo.Name) is not a git repository"
+  }
+
+  Invoke-Git -Repo $Repo -Args @('fetch', '--quiet', 'origin') -SkipOnDryRun | Out-Null
+
+  $branch = (Invoke-Git -Repo $Repo -Args @('branch', '--show-current')).Trim()
+  $upstream = (Invoke-Git -Repo $Repo -Args @('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}') -AllowFailure).Trim()
+  if ($script:LastCommandExitCode -ne 0 -or -not $upstream) {
+    throw "$($Repo.Name) has no upstream branch; set upstream before one-click push"
+  }
+
+  $shortStatus = Invoke-Git -Repo $Repo -Args @('status', '--porcelain')
+  $hasWorktreeChanges = -not [string]::IsNullOrWhiteSpace($shortStatus)
+
+  $aheadBehind = (Invoke-Git -Repo $Repo -Args @('rev-list', '--left-right', '--count', "HEAD...$upstream")).Trim() -split '\s+'
+  $ahead = [int]$aheadBehind[0]
+  $behind = [int]$aheadBehind[1]
+  if ($behind -gt 0) {
+    throw "$($Repo.Name) is behind $upstream by $behind commit(s). Pull/rebase first to avoid hiding conflicts."
+  }
+
+  [pscustomobject]@{
+    Repo = $Repo
+    Branch = $branch
+    Upstream = $upstream
+    HasWorktreeChanges = $hasWorktreeChanges
+    Ahead = $ahead
+    ShouldCommit = $hasWorktreeChanges
+    ShouldPush = ($hasWorktreeChanges -or $ahead -gt 0)
+    ShouldDeploy = ($Repo.DeployTarget -and ($DeployAll -or $hasWorktreeChanges -or $ahead -gt 0))
+  }
+}
+
+function Invoke-RepoCommitPush {
+  param([Parameter(Mandatory = $true)]$State)
+
+  $repo = $State.Repo
+  Write-Step "$($repo.Name): commit and push"
+
+  if ($State.ShouldCommit) {
+    Invoke-Git -Repo $repo -Args @('add', '-A') -SkipOnDryRun | Out-Null
+    Invoke-Git -Repo $repo -Args @('diff', '--cached', '--check') -SkipOnDryRun | Out-Null
+
+    $commitMessage = if ($Message.Trim()) { $Message.Trim() } else { $repo.DefaultMessage }
+    Invoke-Git -Repo $repo -Args @('commit', '-m', $commitMessage) -SkipOnDryRun | Out-Null
+  } else {
+    Write-Info 'No worktree changes to commit.'
+  }
+
+  if (-not $NoPush -and ($State.ShouldPush -or $State.ShouldCommit)) {
+    Invoke-Git -Repo $repo -Args @('push') -SkipOnDryRun | Out-Null
+  } elseif ($NoPush) {
+    Write-Info 'Skipping push because -NoPush was provided.'
+  } else {
+    Write-Info 'No commits to push.'
+  }
+}
+
+function Invoke-BackendBuild {
+  Write-Step 'Build server SIT jar'
+  if (-not $SkipTests) {
+    Invoke-CheckedCommand `
+      -FilePath 'mvn' `
+      -ArgumentList @('-pl', 'yudao-module-wujin', '-am', '-Dtest=WujinMerchantRelationSubmitServiceDbTest#submitRelationCreatesPendingEntityForCustomMaterialOrProcessName,WujinAppTraceServiceTest', '-Dsurefire.failIfNoSpecifiedTests=false', 'test') `
+      -WorkingDirectory (Join-Path $WorkspaceRoot 'Wujin-Mall-Server') `
+      -SkipOnDryRun | Out-Null
+  }
+
+  Invoke-CheckedCommand `
+    -FilePath 'mvn' `
+    -ArgumentList @('-pl', 'yudao-server', '-am', '-P', 'sit', '-Dmaven.test.skip=true', 'package') `
+    -WorkingDirectory (Join-Path $WorkspaceRoot 'Wujin-Mall-Server') `
+    -SkipOnDryRun | Out-Null
+
+  $jar = Join-Path $WorkspaceRoot 'Wujin-Mall-Server\yudao-server\target\wujin-mall-server.jar'
+  if (-not $DryRun -and -not (Test-Path -LiteralPath $jar)) {
+    throw "Backend jar not found: $jar"
+  }
+  return $jar
+}
+
+function Invoke-WebBuild {
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('platform', 'merchant')]
+    [string]$Target
+  )
+
+  $repoName = if ($Target -eq 'platform') { 'Wujin-Mall-Platform-Web' } else { 'Wujin-Mall-Merchant-Web' }
+  Write-Step "Build $Target web SIT dist"
+  Invoke-CheckedCommand `
+    -FilePath 'pnpm' `
+    -ArgumentList @('build:antd:sit') `
+    -WorkingDirectory (Join-Path $WorkspaceRoot $repoName) `
+    -SkipOnDryRun | Out-Null
+
+  $dist = Join-Path $WorkspaceRoot "$repoName\apps\web-antd\dist"
+  if (-not $DryRun -and -not (Test-Path -LiteralPath $dist)) {
+    throw "$Target dist not found: $dist"
+  }
+  return $dist
+}
+
+function Compress-WebDist {
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('platform', 'merchant')]
+    [string]$Target,
+    [Parameter(Mandatory = $true)]
+    [string]$DistPath
+  )
+
+  $zip = Join-Path $WorkspaceRoot "wujin-$Target-dist.zip"
+  Write-Step "Compress $Target dist"
+  Write-Info "Create zip with POSIX paths $DistPath -> $zip"
+  if (-not $DryRun) {
+    $zipTool = Join-Path $env:TEMP 'wujin-create-posix-zip.py'
+    $python = @'
+import os
+import sys
+import zipfile
+
+
+source_dir, zip_path = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+    for root, dirs, files in os.walk(source_dir):
+        dirs.sort()
+        files.sort()
+        for name in files:
+            full_path = os.path.join(root, name)
+            relative_path = os.path.relpath(full_path, source_dir).replace(os.sep, "/")
+            archive.write(full_path, relative_path)
+'@
+    Set-Content -LiteralPath $zipTool -Value $python -Encoding UTF8
+    Invoke-CheckedCommand -FilePath 'py' -ArgumentList @($zipTool, $DistPath, $zip) -WorkingDirectory $WorkspaceRoot | Out-Null
+  }
+  return $zip
+}
+
+function ConvertTo-PythonBool {
+  param([bool]$Value)
+  if ($Value) { return 'true' }
+  return 'false'
+}
+
+function Invoke-PythonDeployTool {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Arguments
+  )
+
+  $tool = Join-Path $env:TEMP 'wujin-one-click-deploy.py'
+  $python = @'
+import argparse
+import os
+import sys
+import time
+import paramiko
+
+
+def connect(args):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(
+        args.host,
+        username=args.user,
+        password=args.password,
+        timeout=30,
+        banner_timeout=30,
+        auth_timeout=30,
+    )
+    return client
+
+
+def run(client, script, timeout=300):
+    stdin, stdout, stderr = client.exec_command(script, get_pty=True, timeout=timeout)
+    out = stdout.read().decode("utf-8", "replace")
+    err = stderr.read().decode("utf-8", "replace")
+    code = stdout.channel.recv_exit_status()
+    if out:
+        print(out)
+    if err:
+        print(err, file=sys.stderr)
+    if code != 0:
+        raise SystemExit(code)
+
+
+def put_files(client, files):
+    sftp = client.open_sftp()
+    try:
+        for local, remote in files:
+            size = os.path.getsize(local)
+            print(f"upload {local} -> {remote} ({size} bytes)")
+            sftp.put(local, remote)
+    finally:
+        sftp.close()
+
+
+def deploy(args):
+    files = []
+    if args.server and args.jar:
+        files.append((args.jar, "/data/wujin-mall/server/wujin-mall-server.jar.new"))
+    if args.platform and args.platform_zip:
+        files.append((args.platform_zip, "/tmp/wujin-platform-dist.zip"))
+    if args.merchant and args.merchant_zip:
+        files.append((args.merchant_zip, "/tmp/wujin-merchant-dist.zip"))
+
+    client = connect(args)
+    try:
+        put_files(client, files)
+        script = """set -e
+mkdir -p /data/wujin-mall/server /data/wujin-mall/logs /data/wujin-mall/web/platform /data/wujin-mall/web/merchant
+ts=$(date +%Y%m%d%H%M%S)
+"""
+        if args.server:
+            script += """if [ -f /data/wujin-mall/server/wujin-mall-server.jar ]; then cp -f /data/wujin-mall/server/wujin-mall-server.jar /data/wujin-mall/server/wujin-mall-server.jar.bak.${ts}; fi
+mv -f /data/wujin-mall/server/wujin-mall-server.jar.new /data/wujin-mall/server/wujin-mall-server.jar
+"""
+        if args.platform:
+            script += """if [ -d /data/wujin-mall/web/platform ] && [ -n "$(find /data/wujin-mall/web/platform -mindepth 1 -maxdepth 1 -print -quit)" ]; then tar -C /data/wujin-mall/web -czf /data/wujin-mall/web/platform.bak.${ts}.tar.gz platform; fi
+find /data/wujin-mall/web/platform -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+unzip -q /tmp/wujin-platform-dist.zip -d /data/wujin-mall/web/platform
+"""
+        if args.merchant:
+            script += """if [ -d /data/wujin-mall/web/merchant ] && [ -n "$(find /data/wujin-mall/web/merchant -mindepth 1 -maxdepth 1 -print -quit)" ]; then tar -C /data/wujin-mall/web -czf /data/wujin-mall/web/merchant.bak.${ts}.tar.gz merchant; fi
+find /data/wujin-mall/web/merchant -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+unzip -q /tmp/wujin-merchant-dist.zip -d /data/wujin-mall/web/merchant
+"""
+        script += """systemctl daemon-reload
+"""
+        if args.server:
+            script += """systemctl restart wujin-mall-server
+"""
+        script += """nginx -t
+systemctl reload nginx
+systemctl is-active wujin-mall-server
+if [ -f /data/wujin-mall/server/wujin-mall-server.jar ]; then sha256sum /data/wujin-mall/server/wujin-mall-server.jar; fi
+if [ -d /data/wujin-mall/web/platform ]; then echo platform_items=$(find /data/wujin-mall/web/platform -maxdepth 1 -mindepth 1 | wc -l); fi
+if [ -d /data/wujin-mall/web/merchant ]; then echo merchant_items=$(find /data/wujin-mall/web/merchant -maxdepth 1 -mindepth 1 | wc -l); fi
+"""
+        run(client, script, timeout=360)
+    finally:
+        client.close()
+
+
+def verify(args):
+    client = connect(args)
+    try:
+        script = """set -e
+echo service=$(systemctl is-active wujin-mall-server)
+nginx -t
+echo root=$(curl -sS -o /dev/null -w "%{http_code}" -I http://127.0.0.1/)
+echo platform=$(curl -sS -o /dev/null -w "%{http_code}" -I http://127.0.0.1/platform/)
+echo merchant=$(curl -sS -o /dev/null -w "%{http_code}" -I http://127.0.0.1/merchant/)
+echo auth_http=$(curl -sS -o /tmp/wujin-auth.out -w "%{http_code}" http://127.0.0.1/admin-api/system/auth/get-permission-info); cat /tmp/wujin-auth.out; echo
+echo captcha_http=$(curl -sS -o /tmp/wujin-captcha.out -w "%{http_code}" -X POST http://127.0.0.1/admin-api/system/captcha/get -H "Content-Type: application/json" -d "{}"); python3 - <<'PY'
+import json
+from pathlib import Path
+text = Path("/tmp/wujin-captcha.out").read_text(errors="replace")
+try:
+    data = json.loads(text)
+    print("captcha_repCode=" + str(data.get("repCode")))
+except Exception:
+    print(text[:300])
+PY
+"""
+        run(client, script, timeout=180)
+    finally:
+        client.close()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=["deploy", "verify"], required=True)
+    parser.add_argument("--host", required=True)
+    parser.add_argument("--user", required=True)
+    parser.add_argument("--password", required=True)
+    parser.add_argument("--server", action="store_true")
+    parser.add_argument("--platform", action="store_true")
+    parser.add_argument("--merchant", action="store_true")
+    parser.add_argument("--jar")
+    parser.add_argument("--platform-zip")
+    parser.add_argument("--merchant-zip")
+    args = parser.parse_args()
+    if args.mode == "deploy":
+        deploy(args)
+    else:
+        verify(args)
+
+
+if __name__ == "__main__":
+    main()
+'@
+
+  if (-not $DryRun) {
+    Set-Content -LiteralPath $tool -Value $python -Encoding UTF8
+  }
+  Invoke-CheckedCommand -FilePath 'py' -ArgumentList (@($tool) + $Arguments) -WorkingDirectory $WorkspaceRoot -SkipOnDryRun | Out-Null
+}
+
+function Invoke-RemoteDeploy {
+  param(
+    [string]$JarPath,
+    [string]$PlatformZip,
+    [string]$MerchantZip,
+    [bool]$DeployServer,
+    [bool]$DeployPlatform,
+    [bool]$DeployMerchant
+  )
+
+  Write-Step 'Upload and replace remote artifacts'
+  $args = @(
+    '--mode', 'deploy',
+    '--host', $SshHost,
+    '--user', $SshUser,
+    '--password', $SshPassword
+  )
+  if ($DeployServer) {
+    $args += @('--server', '--jar', $JarPath)
+  }
+  if ($DeployPlatform) {
+    $args += @('--platform', '--platform-zip', $PlatformZip)
+  }
+  if ($DeployMerchant) {
+    $args += @('--merchant', '--merchant-zip', $MerchantZip)
+  }
+  Invoke-PythonDeployTool -Arguments $args
+}
+
+function Invoke-RemoteVerify {
+  Write-Step 'Verify remote runtime'
+  Invoke-PythonDeployTool -Arguments @(
+    '--mode', 'verify',
+    '--host', $SshHost,
+    '--user', $SshUser,
+    '--password', $SshPassword
+  )
+
+  Write-Step 'Verify public HTTP entry points'
+  Invoke-CheckedCommand -FilePath 'curl.exe' -ArgumentList @('-sS', '-o', 'NUL', '-w', 'merchant=%{http_code}\n', '-I', "http://$SshHost/merchant/") -SkipOnDryRun | Out-Null
+  Invoke-CheckedCommand -FilePath 'curl.exe' -ArgumentList @('-sS', '-o', 'NUL', '-w', 'platform=%{http_code}\n', '-I', "http://$SshHost/platform/") -SkipOnDryRun | Out-Null
+  Invoke-CheckedCommand -FilePath 'curl.exe' -ArgumentList @('-sS', '-o', '-', '-w', '\nauth_http=%{http_code}\n', "http://$SshHost/admin-api/system/auth/get-permission-info") -SkipOnDryRun | Out-Null
+  Invoke-CheckedCommand -FilePath 'curl.exe' -ArgumentList @('-sS', '-o', 'NUL', '-w', 'captcha_http=%{http_code}\n', '-X', 'POST', "http://$SshHost/admin-api/system/captcha/get", '-H', 'Content-Type: application/json', '-d', '{}') -SkipOnDryRun | Out-Null
+}
+
+Write-Step "Workspace: $WorkspaceRoot"
+
+$states = @()
+foreach ($repo in $Repos) {
+  $state = Get-RepoChangeState -Repo $repo
+  $states += $state
+  Write-Info ("{0}: branch={1}, upstream={2}, changes={3}, ahead={4}, deploy={5}" -f `
+    $repo.Name, $state.Branch, $state.Upstream, $state.HasWorktreeChanges, $state.Ahead, $state.ShouldDeploy)
+}
+
+foreach ($state in $states) {
+  if ($state.ShouldCommit -or $state.ShouldPush) {
+    Invoke-RepoCommitPush -State $state
+  }
+}
+
+$deployServer = [bool]($states | Where-Object { $_.Repo.DeployTarget -eq 'server' -and $_.ShouldDeploy })
+$deployPlatform = [bool]($states | Where-Object { $_.Repo.DeployTarget -eq 'platform' -and $_.ShouldDeploy })
+$deployMerchant = [bool]($states | Where-Object { $_.Repo.DeployTarget -eq 'merchant' -and $_.ShouldDeploy })
+
+if ($SkipDeploy) {
+  Write-Step 'Skipping deployment because -SkipDeploy was provided.'
+  exit 0
+}
+
+if (-not ($deployServer -or $deployPlatform -or $deployMerchant)) {
+  Write-Step 'No deployable component changed. Nothing to build or deploy.'
+  exit 0
+}
+
+$jarPath = $null
+$platformZip = $null
+$merchantZip = $null
+
+if ($deployServer) {
+  $jarPath = Invoke-BackendBuild
+}
+if ($deployPlatform) {
+  $platformDist = Invoke-WebBuild -Target 'platform'
+  $platformZip = Compress-WebDist -Target 'platform' -DistPath $platformDist
+}
+if ($deployMerchant) {
+  $merchantDist = Invoke-WebBuild -Target 'merchant'
+  $merchantZip = Compress-WebDist -Target 'merchant' -DistPath $merchantDist
+}
+
+Invoke-RemoteDeploy `
+  -JarPath $jarPath `
+  -PlatformZip $platformZip `
+  -MerchantZip $merchantZip `
+  -DeployServer $deployServer `
+  -DeployPlatform $deployPlatform `
+  -DeployMerchant $deployMerchant
+
+Invoke-RemoteVerify
+
+Write-Step 'Done'

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "color": {
+    "brand": {
+      "yellow": { "$value": "#FFD21E", "$type": "color" },
+      "yellowStrong": { "$value": "#F5B800", "$type": "color" },
+      "black": { "$value": "#111111", "$type": "color" }
+    },
+    "gray": {
+      "0": { "$value": "#FFFFFF", "$type": "color" },
+      "50": { "$value": "#F7F8FA", "$type": "color" },
+      "100": { "$value": "#ECEFF3", "$type": "color" },
+      "300": { "$value": "#CBD1D9", "$type": "color" },
+      "600": { "$value": "#5D6673", "$type": "color" },
+      "900": { "$value": "#111111", "$type": "color" }
+    },
+    "lane": {
+      "product": { "$value": "#111111", "$type": "color" },
+      "process": { "$value": "#F5B800", "$type": "color" },
+      "material": { "$value": "#2F8F46", "$type": "color" }
+    },
+    "signal": {
+      "success": { "$value": "#2F8F46", "$type": "color" },
+      "warning": { "$value": "#D98200", "$type": "color" },
+      "danger": { "$value": "#D92D20", "$type": "color" },
+      "info": { "$value": "#3366CC", "$type": "color" }
+    },
+    "semantic": {
+      "surfacePage": { "$value": "{color.gray.50}", "$type": "color" },
+      "surfaceCard": { "$value": "{color.gray.0}", "$type": "color" },
+      "surfaceHeader": { "$value": "{color.brand.yellow}", "$type": "color" },
+      "textHeading": { "$value": "{color.brand.black}", "$type": "color" },
+      "textBody": { "$value": "#2B2F36", "$type": "color" },
+      "textMuted": { "$value": "{color.gray.600}", "$type": "color" },
+      "borderSubtle": { "$value": "{color.gray.100}", "$type": "color" },
+      "actionPrimary": { "$value": "{color.brand.black}", "$type": "color" },
+      "actionAccent": { "$value": "{color.brand.yellow}", "$type": "color" }
+    }
+  },
+  "dimension": {
+    "radius": {
+      "sm": { "$value": "10rpx", "$type": "dimension" },
+      "md": { "$value": "16rpx", "$type": "dimension" },
+      "lg": { "$value": "20rpx", "$type": "dimension" },
+      "pill": { "$value": "999rpx", "$type": "dimension" }
+    },
+    "space": {
+      "2": { "$value": "8rpx", "$type": "dimension" },
+      "3": { "$value": "12rpx", "$type": "dimension" },
+      "4": { "$value": "16rpx", "$type": "dimension" },
+      "5": { "$value": "20rpx", "$type": "dimension" },
+      "6": { "$value": "24rpx", "$type": "dimension" },
+      "7": { "$value": "28rpx", "$type": "dimension" },
+      "8": { "$value": "32rpx", "$type": "dimension" }
+    },
+    "control": {
+      "height": { "$value": "76rpx", "$type": "dimension" },
+      "tapMin": { "$value": "72rpx", "$type": "dimension" }
+    },
+    "tabbar": {
+      "height": { "$value": "130rpx", "$type": "dimension" }
+    }
+  },
+  "font": {
+    "family": {
+      "sans": { "$value": "PingFang SC, -apple-system, BlinkMacSystemFont, sans-serif", "$type": "fontFamily" }
+    },
+    "size": {
+      "pageTitle": { "$value": "42rpx", "$type": "dimension" },
+      "sectionTitle": { "$value": "32rpx", "$type": "dimension" },
+      "cardTitle": { "$value": "30rpx", "$type": "dimension" },
+      "body": { "$value": "26rpx", "$type": "dimension" },
+      "meta": { "$value": "22rpx", "$type": "dimension" }
+    },
+    "weight": {
+      "regular": { "$value": "400", "$type": "fontWeight" },
+      "medium": { "$value": "600", "$type": "fontWeight" },
+      "bold": { "$value": "700", "$type": "fontWeight" }
+    }
+  },
+  "shadow": {
+    "card": { "$value": "0 12rpx 30rpx rgba(17, 17, 17, 0.06)", "$type": "shadow" },
+    "float": { "$value": "0 20rpx 46rpx rgba(17, 17, 17, 0.10)", "$type": "shadow" }
+  },
+  "duration": {
+    "fast": { "$value": "160ms", "$type": "duration" },
+    "normal": { "$value": "240ms", "$type": "duration" }
+  },
+  "zIndex": {
+    "tabbar": { "$value": "999", "$type": "number" },
+    "modal": { "$value": "9999", "$type": "number" }
+  }
+}

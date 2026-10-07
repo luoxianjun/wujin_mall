@@ -1,0 +1,107 @@
+export const APP_ICON_VARIANTS = [
+  "default",
+  "light",
+  "dark",
+  "muted",
+  "primary",
+  "success",
+  "warning",
+  "danger",
+  "active",
+];
+
+export const APP_ICON_NAMES = new Set([
+  "add",
+  "add_photo_alternate",
+  "arrow_back",
+  "arrow_back_ios",
+  "arrow_back_ios_new",
+  "arrow_forward",
+  "arrow_forward_ios",
+  "assignment",
+  "badge",
+  "ballot",
+  "block",
+  "bookmark",
+  "bookmark_border",
+  "bug_report",
+  "calendar_month",
+  "calendar_today",
+  "cancel",
+  "chat_bubble",
+  "chat_bubble_outline",
+  "check",
+  "check_circle",
+  "chevron_right",
+  "close",
+  "delete",
+  "description",
+  "edit",
+  "emoji_events",
+  "event",
+  "event_available",
+  "expand_less",
+  "expand_more",
+  "favorite",
+  "favorite_border",
+  "feedback",
+  "gavel",
+  "group",
+  "how_to_reg",
+  "lightbulb",
+  "location_on",
+  "logout",
+  "mode_comment",
+  "monetization_on",
+  "more_horiz",
+  "north_east",
+  "notifications_active",
+  "notifications_none",
+  "open_in_new",
+  "pending_actions",
+  "person",
+  "person_add",
+  "photo_camera",
+  "placeholder",
+  "push_pin",
+  "qr_code_2",
+  "qr_code_scanner",
+  "quiz",
+  "redeem",
+  "reply",
+  "report",
+  "schedule",
+  "school",
+  "search",
+  "send",
+  "settings",
+  "share",
+  "shield",
+  "sports_esports",
+  "support_agent",
+  "task_alt",
+  "thumb_up",
+  "thumb_up_off",
+  "thumb_up_off_alt",
+  "timer",
+  "toll",
+  "touch_app",
+  "verified",
+  "visibility",
+  "workspace_premium",
+]);
+
+const DEFAULT_VARIANT = "default";
+const PLACEHOLDER_NAME = "placeholder";
+
+export function getAppIconPath(name, variant = DEFAULT_VARIANT) {
+  const normalizedName =
+    typeof name === "string" && APP_ICON_NAMES.has(name.trim())
+      ? name.trim()
+      : PLACEHOLDER_NAME;
+  const normalizedVariant = APP_ICON_VARIANTS.includes(variant)
+    ? variant
+    : DEFAULT_VARIANT;
+
+  return `/static/icons/app/${normalizedName}-${normalizedVariant}.svg`;
+}

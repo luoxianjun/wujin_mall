@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>One-click Sourcing - 五金智采</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error": "#ba1a1a",
+                      "surface": "#f7f9fb",
+                      "error-container": "#ffdad6",
+                      "on-background": "#191c1e",
+                      "secondary-fixed": "#dce2f7",
+                      "outline-variant": "#d4c5ac",
+                      "inverse-on-surface": "#eff1f3",
+                      "on-secondary-fixed-variant": "#404758",
+                      "on-tertiary-fixed": "#00210e",
+                      "primary-container": "#f6b800",
+                      "secondary-fixed-dim": "#c0c6db",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#5c4300",
+                      "primary-fixed": "#ffdea0",
+                      "on-surface": "#191c1e",
+                      "surface-variant": "#e0e3e5",
+                      "outline": "#827660",
+                      "primary": "#795900",
+                      "on-secondary-container": "#5c6274",
+                      "tertiary-fixed": "#70fda7",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#e6e8ea",
+                      "on-primary-fixed": "#261a00",
+                      "on-surface-variant": "#504532",
+                      "inverse-primary": "#fbbc0c",
+                      "surface-container": "#eceef0",
+                      "inverse-surface": "#2d3133",
+                      "on-tertiary-fixed-variant": "#00522c",
+                      "surface-container-low": "#f2f4f6",
+                      "on-tertiary": "#ffffff",
+                      "primary-fixed-dim": "#fbbc0c",
+                      "background": "#f7f9fb",
+                      "surface-tint": "#795900",
+                      "surface-dim": "#d8dadc",
+                      "on-tertiary-container": "#005c32",
+                      "surface-bright": "#f7f9fb",
+                      "secondary-container": "#d9dff5",
+                      "secondary": "#575e70",
+                      "on-primary": "#ffffff",
+                      "tertiary-container": "#4bdb8a",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed": "#141b2b",
+                      "tertiary-fixed-dim": "#51df8e",
+                      "on-error-container": "#93000a",
+                      "tertiary": "#006d3c",
+                      "surface-container-highest": "#e0e3e5",
+                      "on-primary-container": "#674b00"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "card-padding": "16px",
+                      "stack-gap": "8px",
+                      "gutter": "12px",
+                      "container-margin": "16px",
+                      "unit": "4px",
+                      "section-gap": "24px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-xl": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.03em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "42px",
+                              {
+                                      "lineHeight": "52px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F8FAFC;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .shadow-soft {
+            box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+        }
+        
+        /* Hide scrollbar for clean horizontal scrolling */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-background font-body-md pb-24 max-w-md mx-auto bg-surface-container-low min-h-screen relative shadow-2xl">
+<!-- Top Navigation (Transactional intent, simple back) -->
+<header class="sticky top-0 z-40 bg-primary-container px-container-margin h-14 flex items-center justify-between shadow-sm">
+<button class="flex items-center justify-center p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined text-on-primary-container">arrow_back</span>
+</button>
+<h1 class="text-headline-md font-headline-md font-bold text-on-primary-container">一键寻源</h1>
+<button class="flex items-center justify-center p-2 -mr-2 rounded-full hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">history</span>
+</button>
+</header>
+<main class="p-container-margin space-y-section-gap">
+<!-- Context Card -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-soft border border-outline-variant/30">
+<div class="flex justify-between items-start mb-stack-gap">
+<div>
+<h2 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Target Product</h2>
+<p class="text-body-lg font-body-lg font-semibold text-on-background">膨胀螺丝 M10*80</p>
+</div>
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant text-label-sm font-label-sm rounded-full">成品</span>
+</div>
+<div class="flex items-center text-body-sm font-body-sm text-on-surface-variant bg-surface-container-low p-2 rounded-lg mt-3">
+<span class="material-symbols-outlined text-primary text-[18px] mr-2">lightbulb</span>
+<span>为您匹配到 28 家优质供应商</span>
+</div>
+</section>
+<!-- Supplier Candidates List -->
+<section class="space-y-stack-gap">
+<div class="flex justify-between items-end mb-2">
+<h3 class="text-body-md font-body-md font-bold text-on-surface">智能推荐</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant flex items-center">
+                    综合能力优先 <span class="material-symbols-outlined text-[14px] ml-1">sort</span>
+</span>
+</div>
+<!-- Supplier Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-soft border-2 border-primary-container relative cursor-pointer hover:shadow-md transition-shadow">
+<!-- Selected Badge -->
+<div class="absolute -top-3 -right-3 bg-primary-container text-on-primary-container w-6 h-6 rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex justify-between items-start">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="text-body-lg font-body-lg font-semibold text-on-background">江苏紧固件有限公司</h4>
+</div>
+<div class="flex gap-2 mb-3 flex-wrap">
+<span class="px-2 py-0.5 border border-outline-variant text-on-surface-variant text-label-sm font-label-sm rounded bg-surface">源头工厂</span>
+<span class="px-2 py-0.5 border border-outline-variant text-on-surface-variant text-label-sm font-label-sm rounded bg-surface">ISO9001</span>
+<span class="px-2 py-0.5 border border-outline-variant text-on-surface-variant text-label-sm font-label-sm rounded bg-surface">实力商家</span>
+</div>
+</div>
+<!-- Match Score -->
+<div class="flex flex-col items-end">
+<span class="text-headline-md font-headline-md font-bold text-primary">92%</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">匹配度</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-2 mt-2 pt-3 border-t border-outline-variant/30 text-body-sm font-body-sm">
+<div class="flex flex-col">
+<span class="text-on-surface-variant text-label-sm font-label-sm">主营产品</span>
+<span class="text-on-background truncate">螺栓, 螺母, 膨胀件</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-on-surface-variant text-label-sm font-label-sm">交期</span>
+<span class="text-on-background">24h 发货</span>
+</div>
+</div>
+</div>
+<!-- Supplier Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-soft border border-outline-variant/50 relative cursor-pointer hover:border-primary-container/50 transition-colors">
+<!-- Unselected radio -->
+<div class="absolute top-4 right-4 w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center"></div>
+<div class="flex justify-between items-start">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="text-body-lg font-body-lg font-semibold text-on-background">浙江海盐制造有限公司</h4>
+</div>
+<div class="flex gap-2 mb-3 flex-wrap">
+<span class="px-2 py-0.5 border border-outline-variant text-on-surface-variant text-label-sm font-label-sm rounded bg-surface">ISO9001</span>
+<span class="px-2 py-0.5 border border-outline-variant text-on-surface-variant text-label-sm font-label-sm rounded bg-surface">IATF16949</span>
+</div>
+</div>
+<div class="flex flex-col items-end mr-6">
+<span class="text-headline-md font-headline-md font-bold text-on-surface">88%</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">匹配度</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-2 mt-2 pt-3 border-t border-outline-variant/30 text-body-sm font-body-sm">
+<div class="flex flex-col">
+<span class="text-on-surface-variant text-label-sm font-label-sm">主营产品</span>
+<span class="text-on-background truncate">非标定制, 冲压件</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-on-surface-variant text-label-sm font-label-sm">交期</span>
+<span class="text-on-background">48h 发货</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 text-body-sm font-body-sm font-semibold text-secondary flex items-center justify-center gap-1 hover:bg-surface-container-low rounded-lg transition-colors border border-dashed border-outline-variant">
+                展开更多推荐 (26)
+                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</section>
+<!-- Sourcing Form -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-soft border border-outline-variant/30">
+<h3 class="text-body-lg font-body-lg font-bold text-on-surface mb-4">寻源需求详情</h3>
+<form class="space-y-4">
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">采购数量</label>
+<div class="relative">
+<input class="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-body-md font-body-md text-on-background focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" placeholder="输入数量" type="number" value="1000"/>
+<span class="absolute right-3 top-2 text-on-surface-variant text-body-md">件</span>
+</div>
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">期望交期</label>
+<div class="relative">
+<input class="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-body-md font-body-md text-on-background focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" type="date"/>
+</div>
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">需求描述 (选填)</label>
+<textarea class="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-body-md font-body-md text-on-background focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none" placeholder="请输入对材质、工艺、包装等特殊要求..." rows="3"></textarea>
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-1">联系电话</label>
+<div class="relative">
+<span class="absolute left-3 top-2 text-on-surface-variant text-body-md">+86</span>
+<input class="w-full bg-surface border border-outline-variant rounded-lg pl-12 pr-3 py-2 text-body-md font-body-md text-on-background focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" placeholder="请输入手机号" type="tel" value="13800138000"/>
+</div>
+</div>
+</form>
+</section>
+</main>
+<!-- Bottom Fixed Action Area -->
+<div class="fixed bottom-0 left-0 w-full max-w-md mx-auto z-50 bg-surface-container-lowest border-t border-outline-variant/30 shadow-[0_-8px_24px_rgba(17,24,39,0.08)] p-container-margin flex flex-col gap-2">
+<div class="flex items-center text-label-sm font-label-sm text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-[16px] text-primary mr-1" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            已选 1 家供应商
+        </div>
+<button class="w-full bg-primary-container hover:bg-inverse-primary text-on-primary-container text-body-lg font-body-lg font-bold py-3.5 rounded-xl shadow-sm transition-colors flex justify-center items-center gap-2">
+            提交寻源需求
+            <span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+</body></html>

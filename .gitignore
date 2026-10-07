@@ -76,7 +76,7 @@ web_modules/
 
 # Next.js build output
 .next
-out
+/out/
 
 # Nuxt.js build / generate output
 .nuxt
@@ -147,3 +147,109 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Workspace caches, build outputs, and nested repository metadata
+.git/
+.agents/
+.claude/
+.codex/
+.codex-*/
+.playwright-cli/
+_tmp_deploy/
+output/
+.worktrees/
+target/
+unpackage/
+.flattened-pom.xml
+*.zip
+*.tar
+*.war
+*.jar
+*.class
+*.pyc
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+project.private.*
+upload-result.json
+
+# Local credentials; sanitized examples are provided in config-examples/
+/Wujin-Mall-Merchant-Web/apps/backend-mock/.env
+/Wujin-Mall-Merchant-Web/apps/web-antd/.env
+/Wujin-Mall-Merchant-Web/apps/web-antd/.env.analyze
+/Wujin-Mall-Merchant-Web/apps/web-antd/.env.development
+/Wujin-Mall-Merchant-Web/apps/web-antd/.env.production
+/Wujin-Mall-Merchant-Web/apps/web-antd/.env.sit
+/Wujin-Mall-Merchant-Web/apps/web-ele/.env
+/Wujin-Mall-Merchant-Web/apps/web-ele/.env.analyze
+/Wujin-Mall-Merchant-Web/apps/web-ele/.env.development
+/Wujin-Mall-Merchant-Web/apps/web-ele/.env.production
+/Wujin-Mall-Merchant-Web/apps/web-naive/.env
+/Wujin-Mall-Merchant-Web/apps/web-naive/.env.analyze
+/Wujin-Mall-Merchant-Web/apps/web-naive/.env.development
+/Wujin-Mall-Merchant-Web/apps/web-naive/.env.production
+/Wujin-Mall-Merchant-Web/playground/.env
+/Wujin-Mall-Merchant-Web/playground/.env.analyze
+/Wujin-Mall-Merchant-Web/playground/.env.development
+/Wujin-Mall-Merchant-Web/playground/.env.production
+/Wujin-Mall-Platform-Web/apps/backend-mock/.env
+/Wujin-Mall-Platform-Web/apps/web-antd/.env
+/Wujin-Mall-Platform-Web/apps/web-antd/.env.analyze
+/Wujin-Mall-Platform-Web/apps/web-antd/.env.development
+/Wujin-Mall-Platform-Web/apps/web-antd/.env.production
+/Wujin-Mall-Platform-Web/apps/web-antd/.env.sit
+/Wujin-Mall-Platform-Web/apps/web-ele/.env
+/Wujin-Mall-Platform-Web/apps/web-ele/.env.analyze
+/Wujin-Mall-Platform-Web/apps/web-ele/.env.development
+/Wujin-Mall-Platform-Web/apps/web-ele/.env.production
+/Wujin-Mall-Platform-Web/apps/web-naive/.env
+/Wujin-Mall-Platform-Web/apps/web-naive/.env.analyze
+/Wujin-Mall-Platform-Web/apps/web-naive/.env.development
+/Wujin-Mall-Platform-Web/apps/web-naive/.env.production
+/Wujin-Mall-Platform-Web/playground/.env
+/Wujin-Mall-Platform-Web/playground/.env.analyze
+/Wujin-Mall-Platform-Web/playground/.env.development
+/Wujin-Mall-Platform-Web/playground/.env.production
+/Wujin-Mall-Server/script/docker/docker.env
+/Wujin-Mall-Server/sql/dm/ruoyi-vue-pro-dm8.sql
+/Wujin-Mall-Server/sql/kingbase/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/sql/mysql/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/sql/opengauss/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/sql/oracle/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/sql/postgresql/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/sql/sqlserver/ruoyi-vue-pro.sql
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/AnthropicChatModelTest.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/BaiChuanChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DeepSeekChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/MoonshotChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/OpenAIChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/SiliconFlowChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/TongYiChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/MidjourneyApiTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/OpenAiImageModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/SiliconFlowImageModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/StabilityAiImageModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/image/TongYiImagesModelTest.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/ppt/xunfei/XunFeiPptApiTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/websearch/AiBoChaWebSearchClientTest.java
+/Wujin-Mall-Server/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/file/FileConfigController.http
+/Wujin-Mall-Server/yudao-module-iot/yudao-module-iot-gateway/src/main/resources/application.yaml
+/Wujin-Mall-Server/yudao-server/src/main/resources/application-local.yaml
+/Wujin-Mall-Server/yudao-server/src/main/resources/application-prod.yaml
+/Wujin-Mall-Server/yudao-server/src/main/resources/application-sit.yaml
+/Wujin-Mall-Server/yudao-server/src/main/resources/application.yaml
+/_deploy_prd.ps1
+/scripts/wujin-one-click-submit-deploy.ps1
+
+# Include all sanitized templates, including dotenv examples.
+!/config-examples/**
+
+# Additional third-party integration tests with local credentials
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/DouBaoChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/GeminiChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/chat/XingHuoChatModelTests.java
+/Wujin-Mall-Server/yudao-module-ai/src/test/java/cn/iocoder/yudao/module/ai/framework/ai/core/model/mcp/DouBaoMcpTests.java
+/Wujin-Mall-Server/yudao-module-infra/src/test/java/cn/iocoder/yudao/module/infra/framework/file/core/s3/S3FileClientTest.java
+/Wujin-Mall-Server/yudao-module-mall/yudao-module-trade/src/test/java/cn/iocoder/yudao/module/trade/framework/delivery/core/client/impl/KdNiaoExpressClientIntegrationTest.java
