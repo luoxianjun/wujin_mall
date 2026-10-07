@@ -13,11 +13,13 @@ function readJson(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
-test("wujin mini uses search as the c-end first page while keeping legacy pages available", () => {
+test("wujin mini uses search as the c-end first page and keeps only the messages legacy package", () => {
   const pages = readJson("src/pages.json");
 
   assert.equal(pages.pages[0].path, "pages/wujin/search");
-  assert.ok(pages.pages.some((item) => item.path === "pages/events/index"));
+  // 活动页面已随主流程裁剪移除，供应商沟通仍依赖消息分包
+  assert.ok(!pages.pages.some((item) => item.path.startsWith("pages/events/")));
+  assert.ok(!fs.existsSync(path.resolve(projectRoot, "src/pages/events")));
   assert.ok(pages.subPackages.some((item) => item.root === "pages/messages"));
 });
 

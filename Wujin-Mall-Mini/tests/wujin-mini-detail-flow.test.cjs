@@ -149,7 +149,7 @@ test("wujin search result page opens detail and fullscreen trace from result con
   assert.match(page, /溯源图谱/);
 });
 
-test("wujin sourcing API exposes supplier capability and lead progress placeholders", () => {
+test("wujin sourcing API exposes supplier capability, lead progress and my leads", () => {
   const api = read("src/api/wujin/sourcing.js");
 
   assert.match(api, /export function getWujinSupplierCapability/);
@@ -159,6 +159,9 @@ test("wujin sourcing API exposes supplier capability and lead progress placehold
   assert.match(api, /export function getWujinSourcingLeadProgress/);
   assert.match(api, /\/wujin\/sourcing\/lead\/progress/);
   assert.match(api, /leadId/);
+  assert.match(api, /supplierType/);
+  assert.match(api, /export function getWujinMyLeads/);
+  assert.match(api, /\/wujin\/sourcing\/lead\/my-list/);
 });
 
 test("wujin sourcing page links suppliers to capability detail and submitted leads to progress", () => {
@@ -183,7 +186,13 @@ test("wujin supplier capability page reuses sourcing candidate context", () => {
   assert.match(page, /供应能力详情/);
   assert.match(page, /主营能力/);
   assert.match(page, /可承接泳道/);
-  assert.match(page, /联调接口占位/);
+  assert.match(page, /supplierType:\s*candidatePayload\.value\?\.supplierType/);
+  assert.match(page, /mergeCapability/);
+  assert.match(page, /capability\.capabilities/);
+  assert.match(page, /capability\.approvedTags/);
+  assert.match(page, /供应明细/);
+  assert.match(page, /平台认证标签/);
+  assert.doesNotMatch(page, /联调接口占位/);
 });
 
 test("wujin lead progress and trace graph pages render first-version business views", () => {
@@ -197,6 +206,11 @@ test("wujin lead progress and trace graph pages render first-version business vi
   assert.match(leadPage, /线索进度/);
   assert.match(leadPage, /已提交/);
   assert.match(leadPage, /供应商响应/);
+  assert.match(leadPage, /getWujinMyLeads/);
+  assert.match(leadPage, /listMode\.value = !leadId\.value/);
+  assert.match(leadPage, /我的寻源线索/);
+  assert.match(leadPage, /leadStatusName/);
+  assert.match(leadPage, /去登录/);
 
   assert.match(tracePage, /defineOptions\(\{\s*name:\s*["']WujinMiniTraceMap["']\s*\}\)/);
   assert.match(tracePage, /getWujinTraceGraph/);

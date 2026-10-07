@@ -31,6 +31,7 @@ export function submitWujinSourcingLead(data = {}) {
 export function getWujinSupplierCapability(params = {}) {
   const {
     supplierId,
+    supplierType,
     keyword,
     lane,
     sourceKeyword,
@@ -43,6 +44,7 @@ export function getWujinSupplierCapability(params = {}) {
     method: "GET",
     params: {
       supplierId,
+      supplierType,
       keyword,
       lane,
       sourceKeyword,
@@ -55,19 +57,22 @@ export function getWujinSupplierCapability(params = {}) {
 }
 
 export function getWujinSourcingLeadProgress(params = {}) {
-  const { leadId, keyword, lane, sourceKeyword, ...extraParams } = params;
+  const { leadId } = params;
 
   return request({
     url: "/wujin/sourcing/lead/progress",
     method: "GET",
-    params: {
-      leadId,
-      keyword,
-      lane,
-      sourceKeyword,
-      ...extraParams,
-    },
+    params: { leadId },
     showLoading: true,
     loadingText: "加载线索进度",
+  });
+}
+
+export function getWujinMyLeads() {
+  return request({
+    url: "/wujin/sourcing/lead/my-list",
+    method: "GET",
+    showLoading: true,
+    loadingText: "加载我的线索",
   });
 }
