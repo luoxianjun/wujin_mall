@@ -48,16 +48,18 @@ test('wujin industry template items support low-risk copy workflow', () => {
   assert.match(manageModal, /refreshTemplateItemGrid/);
 });
 
-test('wujin platform exposes attribute dictionary placeholder without backend dependency', () => {
+test('wujin platform attribute dictionary maintains server-side dictionary records', () => {
   const api = read('apps/web-antd/src/api/wujin/platform.ts');
   const route = read('apps/web-antd/src/router/routes/modules/wujin.ts');
+  const data = read('apps/web-antd/src/views/wujin/platform/data.ts');
 
-  assert.match(api, /PlatformAttributeDictionaryItem/);
-  assert.match(api, /PlatformAttributeDictionaryStatus/);
-  assert.match(api, /getPlatformAttributeDictionaryPlaceholder/);
-  assert.match(api, /serverReady:\s*false/);
-  assert.match(api, /Promise\.resolve/);
-  assert.doesNotMatch(api, /\/wujin\/platform-attribute/);
+  assert.match(api, /interface AttributeDictionary/);
+  assert.match(api, /'\/wujin\/attribute-dictionary\/list'/);
+  assert.match(api, /'\/wujin\/attribute-dictionary\/create'/);
+  assert.match(api, /'\/wujin\/attribute-dictionary\/update'/);
+  assert.match(api, /'\/wujin\/attribute-dictionary\/delete'/);
+  assert.doesNotMatch(api, /getPlatformAttributeDictionaryPlaceholder/);
+  assert.doesNotMatch(api, /serverReady:\s*false/);
 
   assert.match(route, /WujinPlatformAttributeDictionary/);
   assert.match(route, /\/wujin\/platform\/attribute-dictionary/);
@@ -68,12 +70,50 @@ test('wujin platform exposes attribute dictionary placeholder without backend de
     'apps/web-antd/src/views/wujin/platform/attribute-dictionary.vue',
   );
   assert.match(page, /WujinPlatformAttributeDictionary/);
-  assert.match(page, /getPlatformAttributeDictionaryPlaceholder/);
-  assert.match(page, /平台属性字典/);
-  assert.match(page, /服务端接口未接入/);
-  assert.match(page, /字典入口骨架/);
-  assert.match(page, /属性分组/);
-  assert.match(page, /可选值/);
+  assert.match(page, /getAttributeDictionaryList/);
+  assert.match(page, /deleteAttributeDictionary/);
+  assert.match(page, /wujin:attribute-dictionary:create/);
+  assert.match(page, /wujin:attribute-dictionary:update/);
+  assert.match(page, /wujin:attribute-dictionary:delete/);
+  assert.match(page, /AttributeDictionaryForm/);
+  assert.doesNotMatch(page, /服务端接口未接入/);
+
+  const form = read(
+    'apps/web-antd/src/views/wujin/platform/modules/attribute-dictionary-form.vue',
+  );
+  assert.match(form, /createAttributeDictionary/);
+  assert.match(form, /updateAttributeDictionary/);
+  assert.match(form, /lane:\s*values\.lane \|\| undefined/);
+
+  assert.match(data, /useAttributeDictionaryEditFormSchema/);
+  assert.match(data, /fieldName:\s*'valueOptions'/);
+  assert.match(data, /mode:\s*'tags'/);
+  assert.match(data, /\['ENUM', 'MULTI_ENUM'\]\.includes\(values\.valueType\) \? 'required'/);
+  assert.match(data, /属性分组/);
+  assert.match(data, /可选值/);
+  assert.match(data, /三泳道通用/);
+});
+
+test('wujin platform reviews merchant custom tags', () => {
+  const api = read('apps/web-antd/src/api/wujin/platform.ts');
+  const route = read('apps/web-antd/src/router/routes/modules/wujin.ts');
+  const page = read('apps/web-antd/src/views/wujin/platform/custom-tag-audit.vue');
+  const form = read(
+    'apps/web-antd/src/views/wujin/platform/modules/custom-tag-review-form.vue',
+  );
+  const data = read('apps/web-antd/src/views/wujin/platform/data.ts');
+
+  assert.match(api, /'\/wujin\/product-attribute\/custom-tag\/list'/);
+  assert.match(api, /'\/wujin\/product-attribute\/custom-tag\/review'/);
+  assert.match(route, /WujinPlatformCustomTagAudit/);
+  assert.match(route, /custom-tag-audit\.vue/);
+  assert.match(page, /getProductCustomTagList/);
+  assert.match(page, /wujin:product-custom-tag:review/);
+  assert.match(page, /ifShow:\s*row\.auditStatus === 10/);
+  assert.match(form, /reviewProductCustomTag/);
+  assert.match(form, /action:\s*'APPROVE'/);
+  assert.match(data, /customTagAuditStatusOptions/);
+  assert.match(data, /values\.action === 'REJECT' \? 'required'/);
 });
 
 test('wujin search monitor has trend filters and operations chart skeleton', () => {
@@ -92,7 +132,14 @@ test('wujin search monitor has trend filters and operations chart skeleton', () 
   assert.match(page, /近30天/);
   assert.match(page, /全部数据/);
   assert.match(page, /运营图表/);
-  assert.match(page, /趋势数据来自监控快照/);
+  assert.match(page, /getMonitorTrend/);
+  assert.match(page, /searchMonitorRangeDays/);
+  assert.match(page, /searchTrendDailyItems/);
+  assert.match(page, /searchTrendTopKeywords/);
+  assert.match(page, /activeSection\.value === 'searchLog'/);
+  assert.match(page, /分日搜索趋势/);
+  assert.match(page, /热搜词 Top10/);
+  assert.match(page, /搜索行为日志按日聚合/);
   assert.match(page, /平均响应耗时/);
   assert.match(page, /高风险预警/);
   assert.match(page, /SearchLogGrid/);

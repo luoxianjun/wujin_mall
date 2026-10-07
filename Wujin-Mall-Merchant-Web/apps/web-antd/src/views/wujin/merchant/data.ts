@@ -979,8 +979,10 @@ export function useSourcingLeadHandleFormSchema(): VbenFormSchema[] {
       component: 'DatePicker',
       componentProps: {
         class: 'w-full',
+        format: 'YYYY-MM-DD HH:mm',
         showTime: true,
-        valueFormat: 'YYYY-MM-DD HH:mm:ss',
+        // 后端 LocalDateTime 按毫秒时间戳反序列化
+        valueFormat: 'x',
       },
     },
     {

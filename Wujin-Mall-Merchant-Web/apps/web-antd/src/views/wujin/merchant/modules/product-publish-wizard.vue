@@ -10,6 +10,7 @@ import {
   Button,
   Descriptions,
   Input,
+  InputNumber,
   message,
   Progress,
   Select,
@@ -18,7 +19,11 @@ import {
 } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
-import { getChainEntityList, submitRelation } from '#/api/wujin/merchant';
+import {
+  getChainEntityList,
+  getEnabledAttributeList,
+  submitRelation,
+} from '#/api/wujin/merchant';
 import { $t } from '#/locales';
 
 import {
@@ -64,6 +69,14 @@ const relationRows = ref<CustomRelation[]>([createRelationRow()]);
 const standardAttributeRows = ref<StandardAttribute[]>([
   createStandardAttributeRow(),
 ]);
+const dictionaryAttributes = ref<WujinMerchantApi.AttributeDictionary[]>([]);
+const dictionaryValues = ref<Record<number, any>>({});
+const dictionaryAttributeHelp =
+  '按平台属性字典填写，带 * 为必填，审核与搜索筛选会使用这些属性';
+const booleanAttributeOptions = [
+  { label: '是', value: '是' },
+  { label: '否', value: '否' },
+];
 
 const defaultBaseValues: ProductPublishFormValues = {
   hasApplicationDescription: true,
@@ -184,13 +197,52 @@ function buildCustomRelations(): WujinMerchantApi.RelationSubmitRequest['customR
   ];
 }
 
+function dictionaryValueText(attribute: WujinMerchantApi.AttributeDictionary) {
+  const value = dictionaryValues.value[attribute.id!];
+  if (Array.isArray(value)) {
+    return value.join(',');
+  }
+  return value === undefined || value === null ? '' : String(value).trim();
+}
+
 function buildStandardAttributes(): WujinMerchantApi.RelationSubmitRequest['standardAttributes'] {
-  return standardAttributeRows.value
+  const dictionaryRows = dictionaryAttributes.value
+    .map((attribute) => ({
+      attributeId: attribute.id,
+      code: attribute.code,
+      name: attribute.name,
+      value: dictionaryValueText(attribute),
+    }))
+    .filter((row) => row.value);
+  const dictionaryNames = new Set(
+    dictionaryAttributes.value.map((attribute) => attribute.name),
+  );
+  const customRows = standardAttributeRows.value
     .map((row) => ({
       name: row.name?.trim(),
       value: row.value?.trim(),
     }))
-    .filter((row) => row.name && row.value);
+    .filter((row) => row.name && row.value && !dictionaryNames.has(row.name));
+  return [...dictionaryRows, ...customRows];
+}
+
+function missingRequiredDictionaryAttributes() {
+  return dictionaryAttributes.value
+    .filter(
+      (attribute) => attribute.requiredFlag && !dictionaryValueText(attribute),
+    )
+    .map((attribute) => attribute.name);
+}
+
+async function loadDictionaryAttributes() {
+  try {
+    dictionaryAttributes.value =
+      (await getEnabledAttributeList('PRODUCT')) ?? [];
+  } catch (error) {
+    // 字典不可用时仍允许按自由参数发布，由后端兜底校验
+    console.error('Failed to load wujin attribute dictionary', error);
+    dictionaryAttributes.value = [];
+  }
 }
 
 function buildCustomTags() {
@@ -278,13 +330,29 @@ function resetStructuredFields(data: ProductPublishFormValues = {}) {
           remark: row.remark,
         }))
       : [createRelationRow()];
+  const dictionaryRows: Record<number, any> = {};
+  const freeRows: StandardAttribute[] = [];
+  for (const row of data.standardAttributes ?? []) {
+    const attribute = dictionaryAttributes.value.find(
+      (item) =>
+        (row.attributeId && item.id === row.attributeId) ||
+        (row.code && item.code === row.code) ||
+        item.name === row.name,
+    );
+    if (attribute?.id) {
+      dictionaryRows[attribute.id] =
+        attribute.valueType === 'MULTI_ENUM'
+          ? String(row.value ?? '')
+              .split(/[,，、]/)
+              .filter(Boolean)
+          : row.value;
+    } else {
+      freeRows.push({ name: row.name, value: row.value });
+    }
+  }
+  dictionaryValues.value = dictionaryRows;
   standardAttributeRows.value =
-    data.standardAttributes && data.standardAttributes.length > 0
-      ? data.standardAttributes.map((row) => ({
-          name: row.name,
-          value: row.value,
-        }))
-      : [createStandardAttributeRow()];
+    freeRows.length > 0 ? freeRows : [createStandardAttributeRow()];
   customRelationDraft.value = createRelationRow();
   customRelationDrafts.value = customRelations.map((row) => ({
     entityName: row.entityName,
@@ -415,6 +483,11 @@ async function validateCurrentStep() {
       message.error('商品关键参数需同时填写参数名和参数值');
       return false;
     }
+    const missingAttributes = missingRequiredDictionaryAttributes();
+    if (missingAttributes.length > 0) {
+      message.error(`请填写平台必填属性：${missingAttributes.join('、')}`);
+      return false;
+    }
   }
   return true;
 }
@@ -476,7 +549,7 @@ const [Modal, modalApi] = useVbenModal({
     currentStep.value = 0;
     publishPreview.value = {};
     submitResult.value = undefined;
-    await loadChainEntityOptions();
+    await Promise.all([loadChainEntityOptions(), loadDictionaryAttributes()]);
     const data = modalApi.getData<ProductPublishFormValues>() ?? {};
     resetStructuredFields(data);
     await baseFormApi.setValues({
@@ -615,6 +688,69 @@ const [Modal, modalApi] = useVbenModal({
             </div>
           </div>
 
+          <div
+            v-if="dictionaryAttributes.length > 0"
+            class="wujin-product-publish__section mx-4"
+          >
+            <div class="wujin-product-publish__section-title">
+              <span>平台标准属性</span>
+              <span>{{ dictionaryAttributeHelp }}</span>
+            </div>
+            <div
+              v-for="attribute in dictionaryAttributes"
+              :key="`dictionary-${attribute.id}`"
+              class="wujin-product-publish__dictionary-row"
+            >
+              <span class="wujin-product-publish__dictionary-label">
+                <em v-if="attribute.requiredFlag">*</em>{{ attribute.name }}
+                <small v-if="attribute.unit">（{{ attribute.unit }}）</small>
+              </span>
+              <InputNumber
+                v-if="attribute.valueType === 'NUMBER'"
+                v-model:value="dictionaryValues[attribute.id!]"
+                class="w-full"
+                :placeholder="attribute.remark || `填写${attribute.name}`"
+              />
+              <Select
+                v-else-if="attribute.valueType === 'ENUM'"
+                v-model:value="dictionaryValues[attribute.id!]"
+                allow-clear
+                :options="
+                  (attribute.valueOptions ?? []).map((value) => ({
+                    label: value,
+                    value,
+                  }))
+                "
+                :placeholder="`选择${attribute.name}`"
+              />
+              <Select
+                v-else-if="attribute.valueType === 'MULTI_ENUM'"
+                v-model:value="dictionaryValues[attribute.id!]"
+                allow-clear
+                mode="multiple"
+                :options="
+                  (attribute.valueOptions ?? []).map((value) => ({
+                    label: value,
+                    value,
+                  }))
+                "
+                :placeholder="`选择${attribute.name}，可多选`"
+              />
+              <Select
+                v-else-if="attribute.valueType === 'BOOLEAN'"
+                v-model:value="dictionaryValues[attribute.id!]"
+                allow-clear
+                :options="booleanAttributeOptions"
+                placeholder="是 / 否"
+              />
+              <Input
+                v-else
+                v-model:value="dictionaryValues[attribute.id!]"
+                :placeholder="attribute.remark || `填写${attribute.name}`"
+              />
+            </div>
+          </div>
+
           <div class="wujin-product-publish__section mx-4">
             <div class="wujin-product-publish__section-title">
               <span>商品关键参数</span>
@@ -734,6 +870,13 @@ const [Modal, modalApi] = useVbenModal({
               <Descriptions.Item label="模板带出">
                 {{ submitResult.copiedTemplateItemCount ?? 0 }} 项
               </Descriptions.Item>
+              <Descriptions.Item label="标准属性">
+                已保存 {{ submitResult.standardAttributeCount ?? 0 }} 项
+              </Descriptions.Item>
+              <Descriptions.Item label="买家常搜词" :span="2">
+                {{ submitResult.pendingCustomTagCount ?? 0 }}
+                个新词已提交平台审核，审核通过后对买家展示
+              </Descriptions.Item>
               <Descriptions.Item label="优化建议" :span="2">
                 {{ submitResult.completenessSuggestion || '暂无优化建议' }}
               </Descriptions.Item>
@@ -829,5 +972,23 @@ const [Modal, modalApi] = useVbenModal({
 .wujin-product-publish__score {
   display: grid;
   gap: 6px;
+}
+
+.wujin-product-publish__dictionary-row {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.wujin-product-publish__dictionary-label em {
+  margin-right: 2px;
+  color: #dc2626;
+  font-style: normal;
+}
+
+.wujin-product-publish__dictionary-label small {
+  color: hsl(var(--muted-foreground));
 }
 </style>

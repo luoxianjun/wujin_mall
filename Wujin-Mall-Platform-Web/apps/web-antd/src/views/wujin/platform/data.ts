@@ -42,6 +42,8 @@ export const sourcingLeadStatusOptions = [
   { label: '已分配', value: 'ASSIGNED' },
   { label: '已联系', value: 'CONTACTED' },
   { label: '已报价', value: 'QUOTED' },
+  { label: '已成交', value: 'CONVERTED' },
+  { label: '未成交', value: 'LOST' },
   { label: '已关闭', value: 'CLOSED' },
 ];
 
@@ -72,6 +74,25 @@ export const searchRuleTypeOptions = [
   { label: '搜索词词典', value: 'INTENT_DICT' },
   { label: '商品别名', value: 'ENTITY_ALIAS' },
   { label: '搜索加权', value: 'WEIGHT' },
+];
+
+export const attributeValueTypeOptions = [
+  { label: '文本', value: 'TEXT' },
+  { label: '数字', value: 'NUMBER' },
+  { label: '单选', value: 'ENUM' },
+  { label: '多选', value: 'MULTI_ENUM' },
+  { label: '是/否', value: 'BOOLEAN' },
+];
+
+export const attributeLaneOptions = [
+  { label: '三泳道通用', value: '' },
+  ...laneOptions,
+];
+
+export const customTagAuditStatusOptions = [
+  { label: '待审核', value: 10 },
+  { label: '审核通过', value: 30 },
+  { label: '已驳回', value: 40 },
 ];
 
 export function optionLabel(
@@ -1128,6 +1149,30 @@ export function useSourcingLeadColumns(): VxeTableGridOptions['columns'] {
     { field: 'requirement', title: '需求说明', minWidth: 240 },
     { field: 'handleRemark', title: '商家处理', minWidth: 220 },
     {
+      field: 'quotedAmount',
+      title: '报价金额(元)',
+      minWidth: 120,
+      formatter: ({ row }) =>
+        row.quotedAmount === null || row.quotedAmount === undefined
+          ? '-'
+          : (Number(row.quotedAmount) / 100).toFixed(2),
+    },
+    {
+      field: 'winProbability',
+      title: '预计转化率',
+      minWidth: 110,
+      formatter: ({ row }) =>
+        row.winProbability === null || row.winProbability === undefined
+          ? '-'
+          : `${row.winProbability}%`,
+    },
+    {
+      field: 'dispatchTime',
+      title: '分发时间',
+      minWidth: 170,
+      formatter: 'formatDateTime',
+    },
+    {
       field: 'createTime',
       title: '创建时间',
       minWidth: 170,
@@ -1197,6 +1242,335 @@ export function useMonitorSnapshotColumns(): VxeTableGridOptions['columns'] {
       title: '创建时间',
       minWidth: 170,
       formatter: 'formatDateTime',
+    },
+  ];
+}
+
+export function useAttributeDictionaryFormSchema(): VbenFormSchema[] {
+  return [
+    {
+      fieldName: 'name',
+      label: '属性名称',
+      component: 'Input',
+      componentProps: { allowClear: true, placeholder: '输入属性名称' },
+    },
+    {
+      fieldName: 'lane',
+      label: '适用泳道',
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: laneOptions,
+        placeholder: '全部泳道',
+      },
+    },
+    {
+      fieldName: 'valueType',
+      label: '值类型',
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: attributeValueTypeOptions,
+        placeholder: '全部类型',
+      },
+    },
+    {
+      fieldName: 'status',
+      label: '状态',
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: statusOptions,
+        placeholder: '全部状态',
+      },
+    },
+  ];
+}
+
+export function useAttributeDictionaryEditFormSchema(): VbenFormSchema[] {
+  return [
+    hiddenIdField(),
+    {
+      fieldName: 'groupName',
+      label: '属性分组',
+      component: 'Input',
+      componentProps: { placeholder: '如：成品属性、原材料属性' },
+      rules: 'required',
+    },
+    {
+      fieldName: 'name',
+      label: '属性名称',
+      component: 'Input',
+      componentProps: { maxlength: 64, placeholder: '如：规格型号' },
+      rules: 'required',
+    },
+    {
+      fieldName: 'code',
+      label: '属性编码',
+      component: 'Input',
+      componentProps: {
+        maxlength: 64,
+        placeholder: '大写字母、数字和下划线，如 FINISHED_PRODUCT_SPEC',
+      },
+      help: '保存时自动转为大写，同一编码只能存在一个属性',
+      rules: 'required',
+    },
+    {
+      fieldName: 'lane',
+      label: '适用泳道',
+      component: 'Select',
+      componentProps: { options: attributeLaneOptions },
+      help: '三泳道通用的属性会出现在所有泳道的商品发布中',
+    },
+    {
+      fieldName: 'valueType',
+      label: '值类型',
+      component: 'Select',
+      componentProps: { options: attributeValueTypeOptions },
+      rules: 'required',
+    },
+    {
+      fieldName: 'valueOptions',
+      label: '可选值',
+      component: 'Select',
+      componentProps: {
+        mode: 'tags',
+        placeholder: '输入后回车添加，单选/多选类型必填',
+        tokenSeparators: [',', '，'],
+      },
+      dependencies: {
+        triggerFields: ['valueType'],
+        show: (values) =>
+          ['ENUM', 'MULTI_ENUM', 'TEXT'].includes(values.valueType),
+        rules: (values) =>
+          ['ENUM', 'MULTI_ENUM'].includes(values.valueType) ? 'required' : null,
+      },
+    },
+    {
+      fieldName: 'unit',
+      label: '单位',
+      component: 'Input',
+      componentProps: { maxlength: 32, placeholder: '如：mm、kg，可不填' },
+    },
+    {
+      fieldName: 'requiredFlag',
+      label: '发布必填',
+      component: 'Switch',
+      componentProps: { checkedChildren: '必填', unCheckedChildren: '可选' },
+    },
+    {
+      fieldName: 'searchableFlag',
+      label: '搜索筛选',
+      component: 'Switch',
+      componentProps: { checkedChildren: '参与', unCheckedChildren: '不参与' },
+    },
+    {
+      fieldName: 'sort',
+      label: '排序',
+      component: 'InputNumber',
+      componentProps: { class: 'w-full', min: 0 },
+    },
+    {
+      fieldName: 'status',
+      label: '状态',
+      component: 'RadioGroup',
+      componentProps: {
+        buttonStyle: 'solid',
+        optionType: 'button',
+        options: statusOptions,
+      },
+      rules: 'required',
+    },
+    {
+      fieldName: 'remark',
+      label: '填写说明',
+      component: 'Textarea',
+      componentProps: {
+        maxlength: 512,
+        rows: 2,
+        placeholder: '商家填写时看到的说明',
+      },
+    },
+  ];
+}
+
+export function useAttributeDictionaryColumns(): VxeTableGridOptions['columns'] {
+  return [
+    { field: 'groupName', title: '属性分组', minWidth: 120 },
+    { field: 'name', title: '属性名称', minWidth: 130 },
+    { field: 'code', title: '属性编码', minWidth: 200 },
+    {
+      field: 'lane',
+      title: '适用泳道',
+      minWidth: 110,
+      slots: {
+        default: ({ row }) =>
+          row.lane ? tag(laneOptions, row.lane, 'geekblue') : '三泳道通用',
+      },
+    },
+    {
+      field: 'valueType',
+      title: '值类型',
+      minWidth: 90,
+      formatter: ({ row }) =>
+        optionLabel(attributeValueTypeOptions, row.valueType),
+    },
+    {
+      field: 'valueOptions',
+      title: '可选值',
+      minWidth: 220,
+      formatter: ({ row }) =>
+        row.valueOptions?.length ? row.valueOptions.join('、') : '-',
+    },
+    { field: 'unit', title: '单位', minWidth: 70 },
+    {
+      field: 'requiredFlag',
+      title: '必填',
+      minWidth: 80,
+      slots: {
+        default: ({ row }) =>
+          h(Tag, { color: row.requiredFlag ? 'red' : 'default' }, () =>
+            row.requiredFlag ? '必填' : '可选',
+          ),
+      },
+    },
+    {
+      field: 'status',
+      title: '状态',
+      minWidth: 80,
+      slots: {
+        default: ({ row }) =>
+          tag(
+            statusOptions,
+            row.status,
+            row.status === 0 ? 'green' : 'default',
+          ),
+      },
+    },
+    { field: 'sort', title: '排序', minWidth: 70 },
+    {
+      title: '操作',
+      width: 140,
+      fixed: 'right',
+      slots: { default: 'actions' },
+    },
+  ];
+}
+
+export function useCustomTagFormSchema(): VbenFormSchema[] {
+  return [
+    {
+      fieldName: 'auditStatus',
+      label: '审核状态',
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: customTagAuditStatusOptions,
+        placeholder: '全部状态',
+      },
+    },
+    {
+      fieldName: 'tagName',
+      label: '标签',
+      component: 'Input',
+      componentProps: { allowClear: true, placeholder: '输入标签名称' },
+    },
+    {
+      fieldName: 'productName',
+      label: '商品名称',
+      component: 'Input',
+      componentProps: { allowClear: true, placeholder: '输入商品名称' },
+    },
+    {
+      fieldName: 'merchantId',
+      label: '商家ID',
+      component: 'InputNumber',
+      componentProps: { class: 'w-full', min: 1, placeholder: '商家ID' },
+    },
+  ];
+}
+
+export function useCustomTagReviewFormSchema(): VbenFormSchema[] {
+  return [
+    hiddenIdField(),
+    {
+      fieldName: 'action',
+      label: '审核结果',
+      component: 'RadioGroup',
+      componentProps: {
+        buttonStyle: 'solid',
+        optionType: 'button',
+        options: [
+          { label: '通过', value: 'APPROVE' },
+          { label: '驳回', value: 'REJECT' },
+        ],
+      },
+      rules: 'required',
+    },
+    {
+      fieldName: 'comment',
+      label: '审核意见',
+      component: 'Textarea',
+      componentProps: {
+        maxlength: 512,
+        rows: 3,
+        placeholder: '驳回时必须填写原因',
+      },
+      dependencies: {
+        triggerFields: ['action'],
+        rules: (values) => (values.action === 'REJECT' ? 'required' : null),
+      },
+    },
+  ];
+}
+
+export function useCustomTagColumns(): VxeTableGridOptions['columns'] {
+  return [
+    {
+      field: 'tagName',
+      title: '标签',
+      minWidth: 120,
+      slots: {
+        default: ({ row }) => h(Tag, { color: 'blue' }, () => row.tagName),
+      },
+    },
+    { field: 'productName', title: '商品名称', minWidth: 180 },
+    { field: 'productId', title: '商品ID', minWidth: 90 },
+    { field: 'merchantId', title: '商家ID', minWidth: 90 },
+    { field: 'reviewNote', title: '商家说明', minWidth: 200 },
+    {
+      field: 'auditStatus',
+      title: '审核状态',
+      minWidth: 100,
+      slots: {
+        default: ({ row }) =>
+          tag(
+            customTagAuditStatusOptions,
+            row.auditStatus,
+            { 10: 'orange', 30: 'green', 40: 'red' }[
+              row.auditStatus as number
+            ] ?? 'blue',
+          ),
+      },
+    },
+    { field: 'auditComment', title: '审核意见', minWidth: 180 },
+    {
+      field: 'auditTime',
+      title: '审核时间',
+      minWidth: 170,
+      formatter: 'formatDateTime',
+    },
+    {
+      field: 'createTime',
+      title: '提交时间',
+      minWidth: 170,
+      formatter: 'formatDateTime',
+    },
+    {
+      title: '操作',
+      width: 100,
+      fixed: 'right',
+      slots: { default: 'actions' },
     },
   ];
 }

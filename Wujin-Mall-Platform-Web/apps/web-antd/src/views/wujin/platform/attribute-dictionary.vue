@@ -1,118 +1,187 @@
 <script lang="ts" setup>
+import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { WujinPlatformApi } from '#/api/wujin/platform';
 
-import { onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 
-import { Page } from '@vben/common-ui';
+import { Page, useVbenModal } from '@vben/common-ui';
 
-import { Alert, Card, Col, Row, Table, Tag } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
-import { getPlatformAttributeDictionaryPlaceholder } from '#/api/wujin/platform';
+import { ACTION_ICON, TableAction, useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  deleteAttributeDictionary,
+  getAttributeDictionaryList,
+} from '#/api/wujin/platform';
+import { $t } from '#/locales';
+
+import {
+  useAttributeDictionaryColumns,
+  useAttributeDictionaryFormSchema,
+} from './data';
+import AttributeDictionaryForm from './modules/attribute-dictionary-form.vue';
 
 defineOptions({ name: 'WujinPlatformAttributeDictionary' });
 
-const loading = ref(false);
-const serverReady = ref(false);
-const dictionaryItems = ref<WujinPlatformApi.PlatformAttributeDictionaryItem[]>(
-  [],
-);
+const dictionaryItems = ref<WujinPlatformApi.AttributeDictionary[]>([]);
 
-const columns = [
-  { dataIndex: 'groupName', title: '属性分组', width: 140 },
-  { dataIndex: 'name', title: '属性名称', width: 160 },
-  { dataIndex: 'code', title: '属性编码', width: 220 },
-  { dataIndex: 'valueType', title: '值类型', width: 120 },
-  { dataIndex: 'requiredFlag', title: '必填', width: 90 },
-  { dataIndex: 'values', title: '可选值' },
-];
+const [FormModal, formModalApi] = useVbenModal({
+  connectedComponent: AttributeDictionaryForm,
+  destroyOnClose: true,
+});
 
-async function loadPlaceholder() {
-  loading.value = true;
+const summaryCards = computed(() => {
+  const items = dictionaryItems.value;
+  return [
+    { label: '属性总数', value: items.length },
+    {
+      label: '发布必填',
+      value: items.filter((item) => item.requiredFlag).length,
+    },
+    {
+      label: '参与搜索筛选',
+      value: items.filter((item) => item.searchableFlag).length,
+    },
+    {
+      label: '已停用',
+      value: items.filter((item) => Number(item.status) !== 0).length,
+    },
+  ];
+});
+
+async function queryDictionaryList(formValues: Record<string, any>) {
+  const list = await getAttributeDictionaryList(formValues);
+  dictionaryItems.value = list;
+  return list;
+}
+
+function onRefresh() {
+  gridApi.query();
+}
+
+function handleCreate() {
+  formModalApi.setData(null).open();
+}
+
+function handleEdit(row: WujinPlatformApi.AttributeDictionary) {
+  formModalApi.setData(row).open();
+}
+
+async function handleDelete(row: WujinPlatformApi.AttributeDictionary) {
+  const hideLoading = message.loading({
+    content: $t('ui.actionMessage.deleting', [row.name]),
+    key: 'action_key_msg',
+  });
   try {
-    const data = await getPlatformAttributeDictionaryPlaceholder();
-    dictionaryItems.value = data.items;
-    serverReady.value = data.serverReady;
+    await deleteAttributeDictionary(row.id as number);
+    message.success({
+      content: $t('ui.actionMessage.deleteSuccess', [row.name]),
+      key: 'action_key_msg',
+    });
+    onRefresh();
   } finally {
-    loading.value = false;
+    hideLoading();
   }
 }
 
-onMounted(() => {
-  void loadPlaceholder();
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions: {
+    schema: useAttributeDictionaryFormSchema(),
+  },
+  gridOptions: {
+    columns: useAttributeDictionaryColumns(),
+    height: 'auto',
+    keepSource: true,
+    pagerConfig: {
+      enabled: false,
+    },
+    proxyConfig: {
+      ajax: {
+        query: async (_params, formValues) =>
+          await queryDictionaryList(formValues),
+      },
+    },
+    rowConfig: {
+      keyField: 'id',
+      isHover: true,
+    },
+    toolbarConfig: {
+      refresh: true,
+      search: true,
+    },
+  } as VxeTableGridOptions<WujinPlatformApi.AttributeDictionary>,
 });
 </script>
 
 <template>
   <Page auto-content-height>
-    <Card :bordered="false" title="平台属性字典">
-      <Alert
-        class="mb-3"
-        message="服务端接口未接入"
-        show-icon
-        type="info"
-        description="当前为字典入口骨架，用于明确平台属性字典的页面位置、字段结构和后续接口契约。"
-      />
-
-      <Row :gutter="[12, 12]" class="mb-3">
-        <Col :lg="8" :sm="12" :xs="24">
-          <div class="wujin-attribute-summary">
-            <span>字典入口骨架</span>
-            <strong>{{ dictionaryItems.length }}</strong>
-          </div>
-        </Col>
-        <Col :lg="8" :sm="12" :xs="24">
-          <div class="wujin-attribute-summary">
-            <span>接口状态</span>
-            <strong>{{ serverReady ? '已接入' : '占位中' }}</strong>
-          </div>
-        </Col>
-        <Col :lg="8" :sm="12" :xs="24">
-          <div class="wujin-attribute-summary">
-            <span>覆盖泳道</span>
-            <strong>成品 / 加工 / 原材料</strong>
-          </div>
-        </Col>
-      </Row>
-
-      <Table
-        :columns="columns"
-        :data-source="dictionaryItems"
-        :loading="loading"
-        :pagination="false"
-        row-key="code"
-        size="small"
+    <FormModal @success="onRefresh" />
+    <div class="wujin-attribute-summary-row">
+      <div
+        v-for="card in summaryCards"
+        :key="card.label"
+        class="wujin-attribute-summary"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'requiredFlag'">
-            <Tag :color="record.requiredFlag ? 'red' : 'default'">
-              {{ record.requiredFlag ? '必填' : '可选' }}
-            </Tag>
-          </template>
-          <template v-if="column.dataIndex === 'values'">
-            <template v-if="record.values?.length">
-              <Tag
-                v-for="value in record.values"
-                :key="`${record.code}-${value}`"
-                color="blue"
-              >
-                {{ value }}
-              </Tag>
-            </template>
-            <span v-else>-</span>
-          </template>
-        </template>
-      </Table>
-    </Card>
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </div>
+    </div>
+    <Grid table-title="平台属性字典">
+      <template #toolbar-tools>
+        <TableAction
+          :actions="[
+            {
+              label: $t('ui.actionTitle.create', ['属性']),
+              type: 'primary',
+              icon: ACTION_ICON.ADD,
+              auth: ['wujin:attribute-dictionary:create'],
+              onClick: handleCreate,
+            },
+          ]"
+        />
+      </template>
+      <template #actions="{ row }">
+        <TableAction
+          :actions="[
+            {
+              label: $t('common.edit'),
+              type: 'link',
+              icon: ACTION_ICON.EDIT,
+              auth: ['wujin:attribute-dictionary:update'],
+              onClick: handleEdit.bind(null, row),
+            },
+            {
+              label: $t('common.delete'),
+              type: 'link',
+              danger: true,
+              icon: ACTION_ICON.DELETE,
+              auth: ['wujin:attribute-dictionary:delete'],
+              popConfirm: {
+                title: $t('ui.actionMessage.deleteConfirm', [row.name]),
+                confirm: handleDelete.bind(null, row),
+              },
+            },
+          ]"
+        />
+      </template>
+    </Grid>
   </Page>
 </template>
 
 <style scoped>
+.wujin-attribute-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .wujin-attribute-summary {
-  min-height: 78px;
+  min-height: 72px;
   padding: 12px;
   border: 1px solid hsl(var(--border));
   border-radius: 6px;
-  background: hsl(var(--muted) / 28%);
+  background: hsl(var(--card));
 }
 
 .wujin-attribute-summary span {
@@ -124,7 +193,13 @@ onMounted(() => {
 .wujin-attribute-summary strong {
   display: block;
   margin-top: 6px;
-  font-size: 18px;
-  line-height: 24px;
+  font-size: 20px;
+  line-height: 26px;
+}
+
+@media (max-width: 768px) {
+  .wujin-attribute-summary-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

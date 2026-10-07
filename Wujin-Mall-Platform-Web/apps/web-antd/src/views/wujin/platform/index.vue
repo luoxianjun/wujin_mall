@@ -3,7 +3,7 @@ import type { WujinPlatformApi } from '#/api/wujin/platform';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { ActionItem } from '#/components/table-action/typing';
 
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { Page, useVbenModal } from '@vben/common-ui';
@@ -28,6 +28,7 @@ import {
   getIndustryTemplateList,
   getMonitorDashboardSummary,
   getMonitorSnapshotList,
+  getMonitorTrend,
   getRelationAuditRecordList,
   getSearchBehaviorLogList,
   getSearchRuleConfigList,
@@ -219,6 +220,13 @@ const searchMonitorTimeRangeOptions: Array<{
 
 const monitorSnapshots = ref<WujinPlatformApi.MonitorSnapshot[]>([]);
 const monitorSnapshotLoading = ref(false);
+const searchTrend = ref<WujinPlatformApi.MonitorTrend>({});
+const searchTrendLoading = ref(false);
+const searchMonitorRangeDays: Record<SearchMonitorTimeRange, number> = {
+  '7D': 7,
+  '30D': 30,
+  ALL: 90,
+};
 
 function rateToPercent(value?: number) {
   return Number(((value ?? 0) * 100).toFixed(2));
@@ -337,6 +345,30 @@ async function loadMonitorSnapshots() {
     monitorSnapshotLoading.value = false;
   }
 }
+
+async function loadSearchTrend() {
+  searchTrendLoading.value = true;
+  try {
+    searchTrend.value = await getMonitorTrend(
+      searchMonitorRangeDays[searchMonitorTimeRange.value],
+    );
+  } catch (error) {
+    console.error('Failed to load wujin search trend', error);
+    searchTrend.value = {};
+  } finally {
+    searchTrendLoading.value = false;
+  }
+}
+
+watch(
+  [searchMonitorTimeRange, activeSection],
+  () => {
+    if (activeSection.value === 'searchLog') {
+      void loadSearchTrend();
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   void loadDashboardSummary();
@@ -643,6 +675,35 @@ const searchMonitorTrendItems = computed<SearchMonitorTrendItem[]>(() =>
         value,
       };
     }),
+);
+
+const searchTrendDailyItems = computed(() => {
+  const points = searchTrend.value.points ?? [];
+  const maxCount = Math.max(
+    1,
+    ...points.map((point) => point.searchCount ?? 0),
+  );
+  return points.map((point) => ({
+    chainViewPercent: rateToPercent(point.chainViewRate),
+    date: (point.date ?? '').slice(5),
+    percent: point.searchCount
+      ? toBarPercent(((point.searchCount ?? 0) / maxCount) * 100)
+      : 0,
+    searchCount: point.searchCount ?? 0,
+  }));
+});
+
+const searchMonitorHint = computed(
+  () =>
+    `分日趋势与热搜词来自搜索行为日志按日聚合（共 ${searchTrend.value.totalSearchCount ?? 0} 次搜索），运营图表复用当前看板指标，监控快照为运营留存记录。`,
+);
+
+const searchTrendTopKeywords = computed(() =>
+  (searchTrend.value.topKeywords ?? []).map((item) => ({
+    chainViewPercent: rateToPercent(item.chainViewRate),
+    keyword: item.keyword ?? '-',
+    searchCount: item.searchCount ?? 0,
+  })),
 );
 
 const searchMonitorOperationCards = computed<DashboardMetric[]>(() => [
@@ -1251,7 +1312,11 @@ async function handleAutoDispatchSourcingLead(
       </SearchRuleGrid>
     </template>
     <template v-else-if="activeSection === 'searchLog'">
-      <Spin :spinning="dashboardLoading || monitorSnapshotLoading">
+      <Spin
+        :spinning="
+          dashboardLoading || monitorSnapshotLoading || searchTrendLoading
+        "
+      >
         <Card
           :bordered="false"
           class="wujin-search-monitor-panel"
@@ -1267,7 +1332,7 @@ async function handleAutoDispatchSourcingLead(
             />
           </template>
           <div class="wujin-search-monitor-hint">
-            趋势数据来自监控快照，运营图表复用当前看板指标。
+            {{ searchMonitorHint }}
           </div>
           <div class="wujin-search-monitor-cards">
             <div
@@ -1283,8 +1348,58 @@ async function handleAutoDispatchSourcingLead(
               <em>{{ card.source }}</em>
             </div>
           </div>
+          <Row :gutter="[16, 16]" class="wujin-search-monitor-chart">
+            <Col :lg="16" :xs="24">
+              <div class="wujin-search-monitor-chart__title">分日搜索趋势</div>
+              <div
+                v-if="searchTrendDailyItems.length > 0"
+                class="wujin-search-daily-trend"
+                aria-label="分日搜索趋势"
+              >
+                <div
+                  v-for="item in searchTrendDailyItems"
+                  :key="item.date"
+                  class="wujin-search-daily-trend__item"
+                  :title="`${item.date}：搜索 ${item.searchCount} 次，制造链查看率 ${item.chainViewPercent}%`"
+                >
+                  <span class="wujin-search-daily-trend__count">
+                    {{ item.searchCount }}
+                  </span>
+                  <div class="wujin-search-daily-trend__column">
+                    <i :style="{ height: `${item.percent}%` }"></i>
+                  </div>
+                  <span class="wujin-search-daily-trend__date">
+                    {{ item.date }}
+                  </span>
+                </div>
+              </div>
+              <div v-else class="wujin-dashboard-empty">暂无搜索日志</div>
+            </Col>
+            <Col :lg="8" :xs="24">
+              <div class="wujin-search-monitor-chart__title">热搜词 Top10</div>
+              <div
+                v-if="searchTrendTopKeywords.length > 0"
+                class="wujin-search-monitor-trends"
+              >
+                <div
+                  v-for="item in searchTrendTopKeywords"
+                  :key="item.keyword"
+                  class="wujin-search-monitor-trend__meta"
+                >
+                  <span>{{ item.keyword }}</span>
+                  <strong>
+                    {{ item.searchCount }} 次 · 链路查看
+                    {{ item.chainViewPercent }}%
+                  </strong>
+                </div>
+              </div>
+              <div v-else class="wujin-dashboard-empty">暂无热搜词</div>
+            </Col>
+          </Row>
           <div class="wujin-search-monitor-chart" aria-label="运营图表">
-            <div class="wujin-search-monitor-chart__title">运营图表</div>
+            <div class="wujin-search-monitor-chart__title">
+              运营图表 · 监控快照
+            </div>
             <div
               v-if="searchMonitorTrendItems.length"
               class="wujin-search-monitor-trends"
@@ -1486,6 +1601,48 @@ async function handleAutoDispatchSourcingLead(
 
 .wujin-search-monitor-trend__bar i.is-alert {
   background: #d97706;
+}
+
+.wujin-search-daily-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 180px;
+  overflow-x: auto;
+}
+
+.wujin-search-daily-trend__item {
+  display: flex;
+  flex: 1 0 22px;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 22px;
+}
+
+.wujin-search-daily-trend__column {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 28px;
+  border-radius: 4px 4px 0 0;
+  background: hsl(var(--muted));
+}
+
+.wujin-search-daily-trend__column i {
+  display: block;
+  width: 100%;
+  border-radius: inherit;
+  background: hsl(var(--primary));
+}
+
+.wujin-search-daily-trend__count,
+.wujin-search-daily-trend__date {
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
 .wujin-category-toolbar {

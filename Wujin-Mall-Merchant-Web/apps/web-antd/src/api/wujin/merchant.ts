@@ -82,6 +82,8 @@ export namespace WujinMerchantApi {
     supplyServiceArea?: string;
     supplyRemark?: string;
     standardAttributes?: Array<{
+      attributeId?: number;
+      code?: string;
       name?: string;
       value?: string;
     }>;
@@ -109,6 +111,8 @@ export namespace WujinMerchantApi {
     completenessScore?: number;
     completenessSuggestion?: string;
     copiedTemplateItemCount?: number;
+    standardAttributeCount?: number;
+    pendingCustomTagCount?: number;
   }
 
   export interface IndustryTemplate {
@@ -141,7 +145,13 @@ export namespace WujinMerchantApi {
     winProbability?: number;
     dispatchStatus?: string;
     dispatchRemark?: string;
+    dispatchTime?: string;
     handleRemark?: string;
+    firstContactTime?: string;
+    quotedTime?: string;
+    convertedTime?: string;
+    lostTime?: string;
+    processDurationMinutes?: number;
     createTime?: string;
   }
 
@@ -171,6 +181,94 @@ export namespace WujinMerchantApi {
     serviceArea?: string;
     remark?: string;
     createTime?: string;
+  }
+
+  export interface AttributeDictionary {
+    id?: number;
+    code?: string;
+    name?: string;
+    groupName?: string;
+    lane?: WujinLane;
+    valueType?: 'BOOLEAN' | 'ENUM' | 'MULTI_ENUM' | 'NUMBER' | 'TEXT';
+    valueOptions?: string[];
+    unit?: string;
+    remark?: string;
+    requiredFlag?: boolean;
+  }
+
+  export interface ProductCustomTag {
+    id?: number;
+    submissionId?: number;
+    productId?: number;
+    productName?: string;
+    tagName?: string;
+    reviewNote?: string;
+    auditStatus?: number;
+    auditComment?: string;
+    auditTime?: string;
+    createTime?: string;
+  }
+
+  export interface ImportRow {
+    merchantId?: number;
+    productId?: number;
+    productName?: string;
+    productCategoryId?: number;
+    entityId?: number;
+    entityName?: string;
+    relationType?: string;
+    stockCount?: number;
+    minOrderQuantity?: number;
+    deliveryDays?: number;
+    serviceArea?: string;
+    remark?: string;
+  }
+
+  export interface ImportPreviewRow extends ImportRow {
+    rowNo?: number;
+    entityLane?: WujinLane;
+    templateMatched?: boolean;
+    errors?: string[];
+  }
+
+  export interface ImportPreview {
+    totalCount?: number;
+    validCount?: number;
+    invalidCount?: number;
+    validRows?: ImportPreviewRow[];
+    invalidRows?: ImportPreviewRow[];
+  }
+
+  export interface ImportRequest {
+    templateId?: number;
+    industryCode?: string;
+    defaultProductCategoryId?: number;
+    rows?: ImportRow[];
+  }
+
+  export interface ImportResult {
+    importedCount?: number;
+    skippedCount?: number;
+    effectiveCount?: number;
+    pendingReviewCount?: number;
+    submissionIds?: number[];
+    invalidRows?: ImportPreviewRow[];
+  }
+
+  export interface ConversionReport {
+    totalLeadCount?: number;
+    contactedCount?: number;
+    quotedCount?: number;
+    convertedCount?: number;
+    lostCount?: number;
+    conversionRate?: string;
+    averageProcessDurationMinutes?: number;
+    laneStats?: Array<{
+      conversionRate?: string;
+      convertedCount?: number;
+      lane?: WujinLane;
+      totalLeadCount?: number;
+    }>;
   }
 
   export type WujinLane = 'MATERIAL' | 'PROCESS' | 'PRODUCT';
@@ -308,6 +406,56 @@ export function updateSupplyCapability(
 ) {
   return requestClient.put<boolean>(
     '/wujin/merchant-supply-capability/update',
+    data,
+  );
+}
+
+export function getSourcingLeadConversionReport(
+  params?: { endDate?: string; lane?: string; startDate?: string },
+  options?: ListRequestOptions,
+) {
+  return requestClient.get<WujinMerchantApi.ConversionReport>(
+    '/wujin/merchant-sourcing-lead/conversion-report',
+    createListRequestConfig(params, options),
+  );
+}
+
+export function getEnabledAttributeList(lane: WujinMerchantApi.WujinLane) {
+  return requestClient.get<WujinMerchantApi.AttributeDictionary[]>(
+    '/wujin/attribute-dictionary/enabled-list',
+    { params: { lane }, silentErrorMessage: true },
+  );
+}
+
+export function getProductCustomTagList(
+  params?: Partial<WujinMerchantApi.ProductCustomTag>,
+  options?: ListRequestOptions,
+) {
+  return requestClient.get<WujinMerchantApi.ProductCustomTag[]>(
+    '/wujin/product-attribute/custom-tag/list',
+    createListRequestConfig(params, options),
+  );
+}
+
+export function downloadRelationImportTemplate() {
+  return requestClient.download<Blob>('/wujin/merchant-import/template');
+}
+
+export function previewRelationImportFile(data: {
+  defaultProductCategoryId?: number;
+  file: File;
+  industryCode?: string;
+  templateId: number;
+}) {
+  return requestClient.upload<WujinMerchantApi.ImportPreview>(
+    '/wujin/merchant-import/preview-file',
+    data,
+  );
+}
+
+export function importRelations(data: WujinMerchantApi.ImportRequest) {
+  return requestClient.post<WujinMerchantApi.ImportResult>(
+    '/wujin/merchant-import/import',
     data,
   );
 }

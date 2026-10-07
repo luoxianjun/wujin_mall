@@ -114,6 +114,15 @@ const routes: RouteRecordRaw[] = [
           title: '平台属性字典',
         },
       },
+      {
+        name: 'WujinPlatformCustomTagAudit',
+        path: '/wujin/platform/custom-tag',
+        component: () => import('#/views/wujin/platform/custom-tag-audit.vue'),
+        meta: {
+          icon: 'lucide:tags',
+          title: '标签审核',
+        },
+      },
     ],
   },
 ];

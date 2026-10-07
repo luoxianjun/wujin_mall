@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { MallSpuApi } from '#/api/mall/product/spu';
+import type { WujinMerchantApi } from '#/api/wujin/merchant';
 import type { Ref } from 'vue';
 
 import { computed, onMounted, ref } from 'vue';
@@ -12,6 +13,7 @@ import { Card, Col, message, Row, Statistic, Tabs } from 'ant-design-vue';
 import { ACTION_ICON, TableAction, useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getSpuPage } from '#/api/mall/product/spu';
 import {
+  getSourcingLeadConversionReport,
   getSupplyCapabilityList,
   getSourcingLeadList,
   getIndustryTemplateList,
@@ -33,6 +35,7 @@ import {
 } from './data';
 import CompletenessExplainModal from './modules/completeness-explain-modal.vue';
 import ProductPublishWizard from './modules/product-publish-wizard.vue';
+import RelationImportModal from './modules/relation-import-modal.vue';
 import RelationSubmitForm from './modules/relation-submit-form.vue';
 import SourcingLeadHandleForm from './modules/sourcing-lead-handle-form.vue';
 
@@ -49,9 +52,15 @@ const activeTab = ref('product');
 const relationSubmissions = ref<any[]>([]);
 const sourcingLeads = ref<any[]>([]);
 const supplyCapabilities = ref<any[]>([]);
+const conversionReport = ref<WujinMerchantApi.ConversionReport>();
 
 const [RelationSubmitFormModal, relationSubmitFormModalApi] = useVbenModal({
   connectedComponent: RelationSubmitForm,
+  destroyOnClose: true,
+});
+
+const [RelationImportModalView, relationImportModalApi] = useVbenModal({
+  connectedComponent: RelationImportModal,
   destroyOnClose: true,
 });
 
@@ -239,6 +248,27 @@ const businessSourceSummary = computed(
 );
 
 const leadReportCards = computed<MetricCard[]>(() => {
+  const report = conversionReport.value;
+  if (report) {
+    const total = report.totalLeadCount ?? 0;
+    const closed = (report.convertedCount ?? 0) + (report.lostCount ?? 0);
+    return [
+      { title: '已报价', value: report.quotedCount ?? 0 },
+      { title: '已转化', value: report.convertedCount ?? 0 },
+      {
+        suffix: '%',
+        title: '转化率',
+        value: Number.parseFloat(String(report.conversionRate ?? '0')) || 0,
+      },
+      { title: '待继续跟进', value: Math.max(0, total - closed) },
+      {
+        description: '从提交到成交/流失的平均处理时长',
+        suffix: '分钟',
+        title: '平均处理耗时',
+        value: report.averageProcessDurationMinutes ?? 0,
+      },
+    ];
+  }
   const leads = sourcingLeads.value;
   const quoted = leads.filter((item) =>
     ['QUOTED', 'CONVERTED'].includes(String(item.leadStatus ?? '')),
@@ -263,11 +293,16 @@ const leadReportCards = computed<MetricCard[]>(() => {
 });
 
 async function loadBusinessSourceData() {
-  const [submissions, leads, capabilities] = await Promise.allSettled([
+  const [submissions, leads, capabilities, report] = await Promise.allSettled([
     getRelationSubmissionList(undefined, { silentErrorMessage: true }),
     getSourcingLeadList(undefined, { silentErrorMessage: true }),
     getSupplyCapabilityList(undefined, { silentErrorMessage: true }),
+    getSourcingLeadConversionReport(undefined, { silentErrorMessage: true }),
   ]);
+
+  // 转化报表优先使用服务端聚合，失败时回退到线索列表本地统计
+  conversionReport.value =
+    report.status === 'fulfilled' ? report.value : undefined;
 
   let hasUnavailableSource = false;
 
@@ -330,7 +365,7 @@ function handleEditRelationSubmit(row: any) {
 }
 
 function handleImportRelationTemplate() {
-  message.info('模板导入后端接口暂未提供，当前仅预留入口。');
+  relationImportModalApi.open();
 }
 
 function handleExplainCompleteness(row: any) {
@@ -370,6 +405,7 @@ onMounted(() => {
 <template>
   <Page auto-content-height>
     <RelationSubmitFormModal @success="refreshSubmissionGrid" />
+    <RelationImportModalView @success="refreshSubmissionGrid" />
     <ProductPublishWizardModal @success="handleProductPublishSuccess" />
     <SourcingLeadHandleFormModal @success="refreshSourcingLeadGrid" />
     <CompletenessExplainModalView />
@@ -432,8 +468,8 @@ onMounted(() => {
                 },
                 {
                   label: '模板导入',
-                  icon: ACTION_ICON.ADD,
-                  auth: ['wujin:merchant-relation-submit:create'],
+                  icon: ACTION_ICON.UPLOAD,
+                  auth: ['wujin:merchant-import:import'],
                   onClick: handleImportRelationTemplate,
                 },
               ]"
@@ -480,7 +516,7 @@ onMounted(() => {
             <Col
               v-for="card in leadReportCards"
               :key="card.title"
-              :lg="6"
+              :lg="leadReportCards.length > 4 ? 4 : 6"
               :sm="12"
               :xs="24"
             >

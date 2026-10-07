@@ -616,7 +616,7 @@ test('wujin merchant product publish builds json arrays from structured controls
   assert.match(wizard, /v-model:value="customTagValues"/);
 });
 
-test('wujin merchant relation declaration supports edit modal and template import placeholder', () => {
+test('wujin merchant relation declaration supports edit modal and template import', () => {
   const api = read('apps/web-antd/src/api/wujin/merchant.ts');
   const page = read('apps/web-antd/src/views/wujin/merchant/index.vue');
   const form = read(
@@ -630,7 +630,10 @@ test('wujin merchant relation declaration supports edit modal and template impor
   assert.match(page, /handleImportRelationTemplate/);
   assert.match(page, /编辑申报/);
   assert.match(page, /模板导入/);
-  assert.match(page, /message\.info\('模板导入后端接口暂未提供/);
+  assert.doesNotMatch(page, /模板导入后端接口暂未提供/);
+  assert.match(page, /RelationImportModal/);
+  assert.match(page, /relationImportModalApi\.open\(\)/);
+  assert.match(page, /wujin:merchant-import:import/);
   assert.match(page, /submissionActions/);
 
   assert.match(form, /isEditMode/);
@@ -683,10 +686,51 @@ test('wujin merchant sourcing leads expose multi-stage follow-up and report skel
   assert.match(page, /已转化/);
   assert.match(page, /转化率/);
   assert.match(page, /待继续跟进/);
+  assert.match(page, /getSourcingLeadConversionReport/);
+  assert.match(page, /conversionReport\.value/);
+  assert.match(data, /valueFormat:\s*'x'/);
 
   assert.match(form, /followStage/);
   assert.match(form, /nextFollowTime/);
   assert.match(form, /quotedAmount/);
   assert.match(form, /winProbability/);
   assert.match(form, /多阶段跟进/);
+});
+
+test('wujin merchant relation template import previews excel before importing', () => {
+  const api = read('apps/web-antd/src/api/wujin/merchant.ts');
+  const modal = read(
+    'apps/web-antd/src/views/wujin/merchant/modules/relation-import-modal.vue',
+  );
+
+  assert.match(api, /'\/wujin\/merchant-import\/template'/);
+  assert.match(api, /'\/wujin\/merchant-import\/preview-file'/);
+  assert.match(api, /'\/wujin\/merchant-import\/import'/);
+  assert.match(api, /'\/wujin\/merchant-sourcing-lead\/conversion-report'/);
+
+  assert.match(modal, /downloadRelationImportTemplate/);
+  assert.match(modal, /previewRelationImportFile/);
+  assert.match(modal, /importRelations/);
+  assert.match(modal, /before-upload="beforeUpload"/);
+  assert.match(modal, /preview\.value\?\.validCount \? runImport\(\) : runPreview\(\)/);
+  assert.match(modal, /templateMatched/);
+  assert.match(modal, /模板外关系，导入后待审核/);
+  assert.match(modal, /pendingReviewCount/);
+});
+
+test('wujin merchant product publish fills platform dictionary attributes', () => {
+  const api = read('apps/web-antd/src/api/wujin/merchant.ts');
+  const wizard = read(
+    'apps/web-antd/src/views/wujin/merchant/modules/product-publish-wizard.vue',
+  );
+
+  assert.match(api, /'\/wujin\/attribute-dictionary\/enabled-list'/);
+  assert.match(wizard, /getEnabledAttributeList\('PRODUCT'\)/);
+  assert.match(wizard, /dictionaryAttributes/);
+  assert.match(wizard, /attributeId:\s*attribute\.id/);
+  assert.match(wizard, /missingRequiredDictionaryAttributes/);
+  assert.match(wizard, /请填写平台必填属性/);
+  assert.match(wizard, /attribute\.valueType === 'MULTI_ENUM'/);
+  assert.match(wizard, /平台标准属性/);
+  assert.match(wizard, /pendingCustomTagCount/);
 });

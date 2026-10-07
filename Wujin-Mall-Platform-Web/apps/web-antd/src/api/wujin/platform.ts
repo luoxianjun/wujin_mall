@@ -184,7 +184,12 @@ export namespace WujinPlatformApi {
     leadStatus?: string;
     dispatchStatus?: string;
     dispatchRemark?: string;
+    dispatchTime?: string;
     handleRemark?: string;
+    followStage?: string;
+    nextFollowTime?: string;
+    quotedAmount?: number;
+    winProbability?: number;
     createTime?: string;
   }
 
@@ -194,21 +199,87 @@ export namespace WujinPlatformApi {
     merchantId?: number;
   }
 
-  export interface PlatformAttributeDictionaryItem {
+  export interface AttributeDictionary {
+    id?: number;
     code?: string;
-    groupName?: string;
     name?: string;
+    groupName?: string;
+    lane?: WujinLane;
+    categoryId?: number;
+    valueType?: AttributeValueType;
+    valueOptions?: string[];
+    unit?: string;
     requiredFlag?: boolean;
-    valueType?: string;
-    values?: string[];
+    searchableFlag?: boolean;
+    sort?: number;
+    status?: number;
+    remark?: string;
+    createTime?: string;
   }
 
-  export interface PlatformAttributeDictionaryPlaceholder {
-    items: PlatformAttributeDictionaryItem[];
-    serverReady: false;
+  export interface ProductCustomTag {
+    id?: number;
+    submissionId?: number;
+    merchantId?: number;
+    productId?: number;
+    productName?: string;
+    tagName?: string;
+    reviewNote?: string;
+    auditStatus?: number;
+    auditComment?: string;
+    auditorId?: number;
+    auditTime?: string;
+    createTime?: string;
   }
 
-  export type PlatformAttributeDictionaryStatus = 'PLACEHOLDER';
+  export interface ProductCustomTagReviewRequest {
+    id?: number;
+    action?: 'APPROVE' | 'REJECT';
+    comment?: string;
+  }
+
+  export interface ProductAttributeValue {
+    id?: number;
+    submissionId?: number;
+    productId?: number;
+    attributeId?: number;
+    attributeCode?: string;
+    attributeName?: string;
+    attributeValue?: string;
+    standardFlag?: boolean;
+  }
+
+  export interface MonitorTrend {
+    startDate?: string;
+    endDate?: string;
+    totalSearchCount?: number;
+    points?: MonitorTrendPoint[];
+    topKeywords?: MonitorTrendKeyword[];
+    laneStats?: Array<{ lane?: string; searchCount?: number }>;
+  }
+
+  export interface MonitorTrendPoint {
+    date?: string;
+    searchCount?: number;
+    searchSatisfaction?: number;
+    chainViewRate?: number;
+    classificationAccuracy?: number;
+    averageResponseTimeMillis?: number;
+    highRiskWarningCount?: number;
+  }
+
+  export interface MonitorTrendKeyword {
+    keyword?: string;
+    searchCount?: number;
+    chainViewRate?: number;
+  }
+
+  export type AttributeValueType =
+    | 'BOOLEAN'
+    | 'ENUM'
+    | 'MULTI_ENUM'
+    | 'NUMBER'
+    | 'TEXT';
   export type WujinHealthStatus = 'HEALTHY' | 'NEEDS_SPLIT' | 'UNBOUND';
   export type WujinLane = 'MATERIAL' | 'PROCESS' | 'PRODUCT';
 }
@@ -445,36 +516,64 @@ export function autoDispatchSourcingLead(leadId: number) {
   );
 }
 
-export function getPlatformAttributeDictionaryPlaceholder() {
-  return Promise.resolve<WujinPlatformApi.PlatformAttributeDictionaryPlaceholder>(
-    {
-      items: [
-        {
-          code: 'FINISHED_PRODUCT_SPEC',
-          groupName: '成品属性',
-          name: '规格型号',
-          requiredFlag: true,
-          valueType: 'TEXT',
-          values: [],
-        },
-        {
-          code: 'MATERIAL_GRADE',
-          groupName: '原材料属性',
-          name: '材质牌号',
-          requiredFlag: true,
-          valueType: 'TEXT',
-          values: [],
-        },
-        {
-          code: 'PROCESS_METHOD',
-          groupName: '加工属性',
-          name: '加工方式',
-          requiredFlag: false,
-          valueType: 'ENUM',
-          values: ['切割', '冲压', '表面处理'],
-        },
-      ],
-      serverReady: false,
-    },
+export function getMonitorTrend(days: number) {
+  return requestClient.get<WujinPlatformApi.MonitorTrend>(
+    '/wujin/monitor-dashboard/trend',
+    { params: { days } },
+  );
+}
+
+export function getAttributeDictionaryList(
+  params?: Partial<WujinPlatformApi.AttributeDictionary>,
+) {
+  return requestClient.get<WujinPlatformApi.AttributeDictionary[]>(
+    '/wujin/attribute-dictionary/list',
+    { params },
+  );
+}
+
+export function createAttributeDictionary(
+  data: WujinPlatformApi.AttributeDictionary,
+) {
+  return requestClient.post<number>('/wujin/attribute-dictionary/create', data);
+}
+
+export function updateAttributeDictionary(
+  data: WujinPlatformApi.AttributeDictionary,
+) {
+  return requestClient.put<boolean>('/wujin/attribute-dictionary/update', data);
+}
+
+export function deleteAttributeDictionary(id: number) {
+  return requestClient.delete<boolean>('/wujin/attribute-dictionary/delete', {
+    params: { id },
+  });
+}
+
+export function getProductCustomTagList(
+  params?: Partial<WujinPlatformApi.ProductCustomTag>,
+) {
+  return requestClient.get<WujinPlatformApi.ProductCustomTag[]>(
+    '/wujin/product-attribute/custom-tag/list',
+    { params },
+  );
+}
+
+export function reviewProductCustomTag(
+  data: WujinPlatformApi.ProductCustomTagReviewRequest,
+) {
+  return requestClient.post<boolean>(
+    '/wujin/product-attribute/custom-tag/review',
+    data,
+  );
+}
+
+export function getProductAttributeValueList(params: {
+  productId?: number;
+  submissionId?: number;
+}) {
+  return requestClient.get<WujinPlatformApi.ProductAttributeValue[]>(
+    '/wujin/product-attribute/value-list',
+    { params },
   );
 }
