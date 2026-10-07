@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
 import javax.annotation.Resource;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,7 +54,8 @@ class WujinAppTraceServiceTest extends BaseDbUnitTest {
 
         assertTrue(graph.getTitle().contains("乘用车轮胎"));
         assertNotNull(graph.getCurrentBatch());
-        assertEquals(Set.of(WujinLane.PRODUCT.name(), WujinLane.PROCESS.name(), WujinLane.MATERIAL.name()),
+        assertEquals(new HashSet<>(Arrays.asList(WujinLane.PRODUCT.name(), WujinLane.PROCESS.name(),
+                        WujinLane.MATERIAL.name())),
                 graph.getNodes().stream().map(WujinTraceGraphRespVO.TraceNode::getLane).collect(Collectors.toSet()));
         assertTrue(graph.getEdges().stream().anyMatch(edge -> edge.getFromName().equals("乘用车轮胎")
                 && edge.getToName().equals("硫化成型")

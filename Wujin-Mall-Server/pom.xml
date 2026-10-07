@@ -15,6 +15,8 @@
         <!-- 各种 module 拓展 -->
         <module>yudao-module-system</module>
         <module>yudao-module-infra</module>
+       <!-- 会员模块依赖论坛对外 API 接口；论坛业务模块本身不参与构建 -->
+       <module>yudao-module-forum-api</module>
        <module>yudao-module-member</module>
 <!--        <module>yudao-module-bpm</module>-->
 <!--        <module>yudao-module-report</module>-->
