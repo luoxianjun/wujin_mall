@@ -12,6 +12,17 @@ const routes: RouteRecordRaw[] = [
       title: '五金商家后台',
     },
   },
+  {
+    name: 'WujinMerchantCategory',
+    path: '/merchant/wujin-category',
+    component: () => import('#/views/wujin/category/index.vue'),
+    meta: {
+      hideInMenu: true,
+      icon: 'lucide:folder-tree',
+      order: 11,
+      title: '平台类目',
+    },
+  },
 ];
 
 export default routes;
