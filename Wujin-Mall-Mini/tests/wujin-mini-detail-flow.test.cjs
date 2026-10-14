@@ -50,22 +50,67 @@ test("wujin detail API wraps detail and trace graph endpoints with source contex
   assert.match(api, /\/wujin\/trace\/graph/);
 });
 
-test("wujin detail page renders lane-specific details and cross-industry comparison", () => {
+test("wujin detail API wraps the real product detail endpoint", () => {
+  const api = read("src/api/wujin/detail.js");
+
+  assert.match(api, /export function getWujinProductDetail/);
+  assert.match(api, /\/wujin\/detail\/product/);
+});
+
+test("wujin detail page renders real product or entity data without template defaults", () => {
+  const page = read("src/pages/wujin/detail.vue");
+
+  assert.match(page, /getWujinProductDetail\(productId\.value\)/);
+  assert.match(page, /getWujinEntityDetail/);
+  assert.match(page, /detail\.value\?\.specs/);
+  assert.match(page, /detail\.value\?\.sections/);
+  assert.match(page, /upstreamMaterials/);
+  assert.match(page, /upstreamProcesses/);
+  assert.doesNotMatch(page, /buildFallbackDetail/);
+  assert.doesNotMatch(page, /碳钢 Q235/);
+  assert.doesNotMatch(page, /热镀锌/);
+  assert.doesNotMatch(page, /M10\*80/);
+  assert.doesNotMatch(page, /56,800/);
+  assert.doesNotMatch(page, /混凝土/);
+  assert.match(page, /商家暂未填写规格参数/);
+});
+
+test("wujin detail tabs switch between specs, drawings, reports and related products", () => {
+  const page = read("src/pages/wujin/detail.vue");
+
+  assert.match(page, /const detailTabs = \[/);
+  assert.match(page, /activeTab = ref\("spec"\)/);
+  assert.match(page, /@tap="activeTab = tab\.value"/);
+  assert.match(page, /activeTab === 'drawing'/);
+  assert.match(page, /activeTab === 'report'/);
+  assert.match(page, /商家暂未上传技术图纸/);
+  assert.match(page, /商家暂未上传质检报告/);
+  assert.match(page, /暂无相关产品/);
+  assert.match(page, /handleRelatedOpen/);
+});
+
+test("wujin detail page shows a not-found state with a way back to search", () => {
+  const page = read("src/pages/wujin/detail.vue");
+
+  assert.match(page, /detail\.value\.exists === false/);
+  assert.match(page, /该商品已下架或不存在/);
+  assert.match(page, /该实体已下架或不存在/);
+  assert.match(page, /返回搜索列表/);
+  assert.match(page, /handleBackToSearch/);
+  assert.match(page, /pages\/wujin\/search-result\?keyword=/);
+});
+
+test("wujin detail page keeps lane-specific actions and cross-industry comparison", () => {
   const page = read("src/pages/wujin/detail.vue");
 
   assert.match(page, /defineOptions\(\{\s*name:\s*["']WujinMiniDetail["']\s*\}\)/);
   assert.match(page, /getWujinEntityDetail/);
-  assert.match(page, /buildFallbackDetail/);
-  assert.match(page, /detailSections/);
   assert.match(page, /industryComparison/);
   assert.match(page, /crossIndustryTips/);
   assert.match(page, /handleSupplierCapabilityOpen/);
   assert.match(page, /handleSourcingOpen/);
   assert.match(page, /handleMaterialLaneOpen/);
   assert.match(page, /handleTraceMapOpen/);
-  assert.match(page, /商品详情/);
-  assert.match(page, /工艺详情/);
-  assert.match(page, /原材料详情/);
   assert.match(page, /跨行业差异提示/);
   assert.match(page, /对比展示/);
   assert.match(page, /供应能力/);
@@ -74,6 +119,7 @@ test("wujin detail page renders lane-specific details and cross-industry compari
   assert.match(page, /查看原材料/);
   assert.match(page, /pages\/wujin\/sourcing/);
   assert.match(page, /requestedLane:\s*["']MATERIAL["']/);
+  assert.match(page, /sourceProductId:\s*isProductMode\.value \? productId\.value/);
 });
 
 test("wujin detail page uses a purchase decision layout instead of loose gray blocks", () => {
@@ -100,7 +146,7 @@ test("wujin detail page follows the industrial product detail reference layout",
   assert.match(page, /单价/);
   assert.match(page, /起订量 \(MOQ\)/);
   assert.match(page, /现货库存/);
-  assert.match(page, /24h发货/);
+  assert.match(page, /天发货/);
   assert.match(page, /规格参数/);
   assert.match(page, /技术图纸/);
   assert.match(page, /质检报告/);
@@ -138,14 +184,14 @@ test("wujin mini product images filter broken demo placeholders before rendering
 test("wujin search result page opens detail and fullscreen trace from result context", () => {
   const page = read("src/pages/wujin/search-result.vue");
 
-  assert.match(page, /handleDetailOpen/);
+  assert.match(page, /handleProductOpen/);
+  assert.match(page, /handleEntityOpen/);
   assert.match(page, /handleTraceMapOpen/);
   assert.match(page, /pages\/wujin\/detail/);
   assert.match(page, /pages\/wujin\/trace-fullscreen/);
   assert.match(page, /keyword=\$\{encodeURIComponent\(lastKeyword\.value/);
-  assert.match(page, /lane=\$\{encodeURIComponent\(summary\.lane/);
+  assert.match(page, /lane=\$\{encodeURIComponent\(activeLane\.value/);
   assert.match(page, /sourceKeyword=\$\{encodeURIComponent\(lastKeyword\.value/);
-  assert.match(page, /查看详情/);
   assert.match(page, /溯源图谱/);
 });
 

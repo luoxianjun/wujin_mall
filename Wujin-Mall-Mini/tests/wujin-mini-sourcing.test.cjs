@@ -46,7 +46,7 @@ test("wujin mini search result page navigates upstream trace to sourcing page", 
   assert.match(page, /uni\.navigateTo/);
   assert.match(page, /pages\/wujin\/sourcing/);
   assert.match(page, /keyword=\$\{encodeURIComponent\(lastKeyword\.value/);
-  assert.match(page, /lane=MATERIAL/);
+  assert.match(page, /lane=\$\{encodeURIComponent\(activeLane\.value\)\}/);
 });
 
 test("wujin mini sourcing page renders suppliers and lead form", () => {

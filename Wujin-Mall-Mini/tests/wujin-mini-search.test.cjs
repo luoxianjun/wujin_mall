@@ -56,6 +56,18 @@ test("wujin mini search home navigates to the dedicated result page instead of f
   assert.doesNotMatch(homePage, /productMatchesKeyword/);
 });
 
+test("wujin mini search API wraps lane product paging and silent filter logging", () => {
+  const api = read("src/api/wujin/search.js");
+
+  assert.match(api, /export function getWujinLaneProducts/);
+  assert.match(api, /\/wujin\/search\/products/);
+  assert.match(api, /lane,/);
+  assert.match(api, /brandId/);
+  assert.match(api, /sort/);
+  assert.match(api, /pageNo/);
+  assert.match(api, /showLoading:\s*!options\.silent/);
+});
+
 test("wujin mini dedicated search result page owns the three-lane result flow", () => {
   const page = read("src/pages/wujin/search-result.vue");
 
@@ -65,124 +77,93 @@ test("wujin mini dedicated search result page owns the three-lane result flow", 
   assert.match(page, /onLoad\(\(options = \{\}\) =>/);
   assert.match(page, /options\.keyword/);
   assert.match(page, /submitSearch\(\{\s*[\s\S]*entryPath:/);
-});
-
-test("wujin mini search result page renders three-lane result and trace context", () => {
-  const page = read("src/pages/wujin/search-result.vue");
-
-  assert.match(page, /defineOptions\(\{\s*name:\s*["']WujinMiniSearchResult["']\s*\}\)/);
-  assert.match(page, /searchWujin/);
   assert.match(page, /laneOptions/);
   assert.match(page, /PRODUCT/);
   assert.match(page, /PROCESS/);
   assert.match(page, /MATERIAL/);
   assert.match(page, /defaultLane/);
   assert.match(page, /laneSummaries/);
-  assert.match(page, /requestedLane:\s*extra\.requestedLane\s*\|\|\s*["']PRODUCT["']/);
   assert.match(page, /requestedLane\.value\s*=\s*extra\.requestedLane\s*\|\|\s*["']PRODUCT["']/);
   assert.match(page, /riskWarningRequired/);
-  assert.match(page, /riskWarningText/);
   assert.match(page, /handleLaneSwitch/);
   assert.match(page, /entryPath:\s*["']LANE_SWITCH["']/);
-  assert.match(page, /sourceKeyword:\s*lastKeyword\.value/);
   assert.match(page, /三泳道/);
-  assert.match(page, /上游溯源/);
-  assert.match(page, /一键寻源/);
-  assert.doesNotMatch(page, /查看原材料/);
   assert.match(page, /产业链寻源/);
-  assert.match(page, /activeLaneSummary/);
-  assert.match(page, /chainMaterial/);
-  assert.match(page, /materialRatio/);
-  assert.match(page, /class="material-actions"/);
-  assert.doesNotMatch(page, /class="product-actions"/);
-  assert.doesNotMatch(page, /class="wujin-action-grid"/);
+  assert.match(page, /一键寻源/);
   assert.match(page, /pages\/wujin\/trace-fullscreen/);
-  assert.match(page, /原材料商品/);
-  assert.match(page, /查看更多/);
 });
 
-test("wujin mini search result page removes explanatory copy cards from result list", () => {
+test("wujin mini search result loads products per lane so one product never shows in two tabs", () => {
   const page = read("src/pages/wujin/search-result.vue");
 
-  assert.doesNotMatch(page, /class="chain-brief"/);
-  assert.doesNotMatch(page, /class="wujin-card chain-guide"/);
-  assert.doesNotMatch(page, /chainBriefText/);
-  assert.doesNotMatch(page, /chainGuideText/);
+  assert.match(page, /getWujinLaneProducts\(\{[\s\S]*?lane:\s*activeLane\.value/);
+  assert.match(page, /laneRequestSeq/);
+  assert.match(page, /onReachBottom/);
+  assert.match(page, /laneFinished\.value\s*=\s*list\.length < LANE_PAGE_SIZE/);
+  assert.match(page, /没有更多了/);
+  assert.doesNotMatch(page, /getWujinProductRecommendations/);
+  assert.doesNotMatch(page, /relatedProducts/);
+  assert.doesNotMatch(page, /keywordMatchedProducts/);
 });
 
-test("wujin mini search result page does not use tire fallback for unrelated product keyword", () => {
+test("wujin mini search result never fabricates products, counts or upstream materials", () => {
   const page = read("src/pages/wujin/search-result.vue");
 
-  assert.match(page, /buildFallbackProducts/);
-  assert.match(page, /不锈钢螺丝/);
-  assert.match(page, /keywordText\.includes\("不锈钢"\)/);
-  assert.doesNotMatch(page, /product-fallback-1["'],\s*name:\s*["']高耐磨乘用车轮胎/);
-  assert.doesNotMatch(page, /product-fallback-2["'],\s*name:\s*["']工程车橡胶轮胎/);
+  assert.doesNotMatch(page, /buildFallbackProducts/);
+  assert.doesNotMatch(page, /fallback-/);
+  assert.doesNotMatch(page, /chainMaterial/);
+  assert.doesNotMatch(page, /materialRatio/);
+  assert.doesNotMatch(page, /CCC认证/);
+  assert.doesNotMatch(page, /绑定4类原材料/);
+  assert.doesNotMatch(page, /优选供应商/);
+  assert.match(page, /绑定\$\{item\.materialCount\}类原材料/);
+  assert.match(page, /laneUpstream/);
 });
 
-test("wujin mini search result renders each category level as one unlabeled scrolling row", () => {
+test("wujin mini search result shows friendly empty states with hot keywords", () => {
   const page = read("src/pages/wujin/search-result.vue");
 
-  assert.match(page, /class="category-suggestion-panel"/);
-  assert.match(page, /\{\{\s*activeLaneName\s*\}\}分类/);
-  assert.match(page, /categorySuggestions/);
-  assert.match(page, /searchResult\.value\?\.categoryGroups/);
-  assert.match(page, /v-for="group in categoryGroups"/);
-  assert.match(page, /<scroll-view[\s\S]*?scroll-x/);
-  assert.match(page, /class="category-suggestion-list-inner"/);
-  assert.match(page, /v-for="item in group\.categories"/);
-  assert.match(page, /\.category-suggestion-list-inner\s*\{[\s\S]*?display:\s*inline-flex/);
-  assert.match(page, /\.category-suggestion-chip\s*\{[\s\S]*?flex-shrink:\s*0/);
-  assert.doesNotMatch(page, /category-suggestion-level/);
-  assert.doesNotMatch(page, /group\.levelName/);
-  assert.match(page, /handleCategorySuggestionSelect/);
-  assert.match(page, /class="category-suggestion-label"/);
-  assert.match(page, /\{\{\s*categorySuggestionLabel\(item\)\s*\}\}/);
-  assert.match(page, /function\s+categorySuggestionLabel\(item\s*=\s*\{\}\)/);
-  assert.match(page, /categoryPath\.split\(\s*\/\[>＞\/\]\//);
-  assert.doesNotMatch(page, /class="category-suggestion-path"/);
-  assert.doesNotMatch(page, /class="category-suggestion-lane"/);
-  assert.doesNotMatch(page, /laneName\s*\|\|\s*laneDisplayName\(item\.lane\)/);
-  assert.match(page, /categoryPath/);
-  assert.match(page, /categoryId/);
+  assert.match(page, /class="search-empty-state"/);
+  assert.match(page, /未找到相关结果，试试其他关键词/);
+  assert.match(page, /推荐热搜词/);
+  assert.match(page, /HOT_WUJIN_SEARCH_KEYWORDS/);
+  assert.match(page, /handleHotKeywordSearch/);
+  assert.match(page, /暂无上游关联的加工工艺/);
+  assert.match(page, /暂无上游关联的原材料/);
+  assert.match(page, /laneEmptyHint/);
+});
+
+test("wujin mini search result filters by category dropdown and bottom popup without replacing the keyword", () => {
+  const page = read("src/pages/wujin/search-result.vue");
+
+  assert.match(page, /class="filter-bar"/);
+  assert.match(page, /class="filter-dropdown"/);
+  assert.match(page, /class="category-popup"/);
+  assert.match(page, /categoryTree/);
+  assert.match(page, /node\?\.lane === activeLane\.value/);
+  assert.match(page, /popupColumns/);
+  assert.match(page, /childLevelName/);
+  assert.match(page, /二级分类/);
+  assert.match(page, /三级分类/);
+  assert.match(page, /handlePopupConfirm/);
+  assert.match(page, /handleBrandSelect/);
+  assert.match(page, /handleSortSelect/);
+  assert.match(page, /categoryId:\s*selectedCategory\.value\?\.categoryId/);
+  assert.match(page, /brandId:\s*selectedBrand\.value\?\.brandId/);
   assert.match(page, /entryPath:\s*["']CATEGORY_SUGGESTION["']/);
+
+  const applyCategory = page.slice(page.indexOf("function applyCategory"), page.indexOf("function clearCategory"));
+  assert.doesNotMatch(applyCategory, /keyword\.value\s*=/);
+  assert.doesNotMatch(applyCategory, /lastKeyword\.value\s*=/);
+  assert.doesNotMatch(page, /function handleCategorySuggestionSelect/);
 });
 
-test("wujin mini search result falls back to grouping legacy suggestions by level", () => {
+test("wujin mini search result opens real product detail by product id", () => {
   const page = read("src/pages/wujin/search-result.vue");
+  const home = read("src/pages/wujin/search.vue");
 
-  assert.match(page, /const\s+legacyGroups\s*=\s*new Map\(\)/);
-  assert.match(page, /const\s+level\s*=\s*categoryLevel\(item\)/);
-  assert.match(
-    page,
-    /\.map\(\(\[level,\s*categories\]\)\s*=>\s*\(\{\s*level,\s*categories,/,
-  );
-  assert.doesNotMatch(page, /function\s+categoryLevelName/);
-  assert.doesNotMatch(page, /[一二三]级分类/);
-});
-
-test("wujin mini search result keeps lane tabs directly below search and scopes categories to the active lane", () => {
-  const page = read("src/pages/wujin/search-result.vue");
-
-  assert.ok(page.indexOf('class="lane-tabs"') < page.indexOf('class="category-suggestion-panel"'));
-  assert.match(page, /item\?\.lane\s*===\s*activeLane\.value/);
-  assert.match(page, /暂无匹配的\{\{\s*activeLaneName\s*\}\}分类/);
-});
-
-test("wujin mini material lane searches and renders real material products", () => {
-  const page = read("src/pages/wujin/search-result.vue");
-  const detail = read("src/pages/wujin/detail.vue");
-
-  assert.match(page, /class="downstream-section"/);
-  assert.match(page, /raw-material-products/);
-  assert.match(page, /原材料商品/);
-  assert.match(page, /searchResult\.value\?\.relatedProducts/);
-  assert.match(page, /relatedProducts\.value\.slice\(0, 8\)/);
-  assert.match(page, /activeLane\.value\s*===\s*["']MATERIAL["']/);
-  assert.match(page, /recommendFinished\.value\s*=\s*true/);
-  assert.match(page, /sourceProductId:\s*extra\.sourceProductId/);
-  assert.match(detail, /sourceProductId:\s*entityType\.value\s*===\s*["']PRODUCT["']/);
-  assert.match(page, /class="downstream-material"/);
-  assert.match(page, /当前分类暂无可售商品/);
-  assert.doesNotMatch(page, /fallback-material-/);
+  assert.match(page, /pages\/wujin\/detail\?productId=/);
+  assert.match(page, /pages\/wujin\/detail\?id=\$\{encodeURIComponent\(entity\.id/);
+  assert.match(home, /pages\/wujin\/detail\?productId=/);
+  assert.doesNotMatch(page, /entityType=PRODUCT/);
 });

@@ -165,7 +165,7 @@ async function loadRecommendProducts() {
 
 function handleRecommendSelect(item = {}) {
   uni.navigateTo({
-    url: `/pages/wujin/detail?keyword=${encodeURIComponent(item.name || "五金商品")}&lane=PRODUCT&id=${encodeURIComponent(item.id || "")}&entityType=PRODUCT`,
+    url: `/pages/wujin/detail?productId=${encodeURIComponent(item.id || "")}&lane=PRODUCT&keyword=${encodeURIComponent(item.name || "")}`,
   });
 }
 

@@ -4,9 +4,9 @@
       <button class="header-icon-button" @tap="handleBack">
         <AppIcon name="arrow_back" variant="dark" size="38rpx" />
       </button>
-      <view class="detail-search-pill">
+      <view class="detail-search-pill" @tap="handleBackToSearch">
         <AppIcon name="search" variant="muted" size="28rpx" />
-        <text class="detail-search-text">{{ detail.name }}</text>
+        <text class="detail-search-text">{{ displayName }}</text>
       </view>
       <view class="header-actions">
         <button class="header-icon-button" @tap="handleFavorite">
@@ -18,7 +18,22 @@
       </view>
     </view>
 
-    <scroll-view class="detail-scroll" scroll-y>
+    <view v-if="!loaded" class="detail-state-card">
+      <text class="detail-state-text">正在加载详情...</text>
+    </view>
+
+    <view v-else-if="notFound" class="detail-state-card detail-not-found">
+      <view class="detail-state-icon">
+        <AppIcon name="block" variant="muted" size="64rpx" />
+      </view>
+      <text class="detail-state-title">{{ notFoundText }}</text>
+      <text v-if="detail && detail.name" class="detail-state-text">{{ detail.name }}</text>
+      <button class="wujin-button wujin-button--yellow detail-state-button" @tap="handleBackToSearch">
+        返回搜索列表
+      </button>
+    </view>
+
+    <scroll-view v-else class="detail-scroll" scroll-y>
       <view class="detail-gallery">
         <image
           v-if="activeProductImage"
@@ -27,8 +42,8 @@
           mode="aspectFill"
         />
         <view v-else class="detail-gallery-image detail-gallery-image--empty">
-          <text class="detail-gallery-empty-title">五金商品</text>
-          <text class="detail-gallery-empty-text">暂无商品主图</text>
+          <text class="detail-gallery-empty-title">{{ laneDisplayTag(currentLane) || "五金" }}</text>
+          <text class="detail-gallery-empty-text">暂无图片</text>
         </view>
         <view class="gallery-count">
           <text>{{ galleryCountText }}</text>
@@ -38,12 +53,13 @@
       <view class="purchase-decision-card">
         <view class="purchase-summary">
           <view class="purchase-copy">
-            <text class="purchase-name">{{ detail.name }}</text>
-            <view class="detail-tags detail-tags--compact">
+            <text class="purchase-name">{{ displayName }}</text>
+            <text v-if="summaryText" class="purchase-intro">{{ summaryText }}</text>
+            <view v-if="productTags.length" class="detail-tags detail-tags--compact">
               <text
-                v-for="tag in productTags"
+                v-for="(tag, index) in productTags"
                 :key="tag"
-                :class="['detail-chip', tag === activeDetailTag ? 'detail-chip--active' : '']"
+                :class="['detail-chip', index === 0 ? 'detail-chip--active' : '']"
               >
                 {{ tag }}
               </text>
@@ -55,12 +71,7 @@
           <view class="purchase-item">
             <text class="purchase-label">单价</text>
             <view class="price-line">
-              <text
-                v-if="priceParts.symbol"
-                class="price-symbol"
-              >
-                {{ priceParts.symbol }}
-              </text>
+              <text v-if="priceParts.symbol" class="price-symbol">{{ priceParts.symbol }}</text>
               <text class="purchase-value purchase-price">{{ priceParts.amount }}</text>
               <text class="price-unit">{{ priceParts.unit }}</text>
             </view>
@@ -83,25 +94,103 @@
       <view class="spec-panel">
         <scroll-view class="detail-tabs" scroll-x>
           <view class="detail-tabs-inner">
-            <text class="detail-tab detail-tab--active">规格参数</text>
-            <text class="detail-tab">技术图纸</text>
-            <text class="detail-tab">质检报告</text>
-            <text class="detail-tab">相关产品</text>
+            <text
+              v-for="tab in detailTabs"
+              :key="tab.value"
+              :class="['detail-tab', activeTab === tab.value ? 'detail-tab--active' : '']"
+              @tap="activeTab = tab.value"
+            >
+              {{ tab.label }}
+            </text>
           </view>
         </scroll-view>
-        <view class="spec-list">
-          <view
-            v-for="item in specificationRows"
-            :key="item.label"
-            class="spec-row"
-          >
+
+        <view v-if="activeTab === 'spec'" class="spec-list">
+          <view v-for="item in specificationRows" :key="item.label" class="spec-row">
             <text class="spec-label">{{ item.label }}</text>
             <text class="spec-value">{{ item.value }}</text>
+          </view>
+          <view v-if="!specificationRows.length" class="tab-empty">
+            <text class="tab-empty-text">商家暂未填写规格参数</text>
+          </view>
+          <view v-if="descriptionNodes" class="detail-description">
+            <text class="detail-description-title">商品介绍</text>
+            <rich-text :nodes="descriptionNodes" />
+          </view>
+        </view>
+
+        <view v-else-if="activeTab === 'drawing'" class="tab-empty">
+          <text class="tab-empty-text">商家暂未上传技术图纸</text>
+          <button class="wujin-button wujin-button--line tab-empty-button" @tap="handleSourcingOpen">
+            向供应商索取
+          </button>
+        </view>
+
+        <view v-else-if="activeTab === 'report'" class="tab-empty">
+          <text class="tab-empty-text">商家暂未上传质检报告</text>
+          <button class="wujin-button wujin-button--line tab-empty-button" @tap="handleSourcingOpen">
+            向供应商索取
+          </button>
+        </view>
+
+        <view v-else class="related-panel">
+          <view v-if="relatedProducts.length" class="related-grid">
+            <view
+              v-for="item in relatedProducts"
+              :key="item.id"
+              class="related-card"
+              @tap="handleRelatedOpen(item)"
+            >
+              <image
+                v-if="item.image"
+                class="related-image"
+                :src="item.image"
+                mode="aspectFill"
+                lazy-load
+              />
+              <view v-else class="related-image related-image--empty"></view>
+              <text class="related-name">{{ item.name }}</text>
+              <text class="related-price">{{ item.price }}</text>
+            </view>
+          </view>
+          <view v-else class="tab-empty">
+            <text class="tab-empty-text">暂无相关产品</text>
           </view>
         </view>
       </view>
 
-      <view class="risk-ticket">
+      <view v-if="isProductMode" class="upstream-board">
+        <view class="upstream-group">
+          <text class="upstream-group-title">上游原材料</text>
+          <view v-if="upstreamMaterials.length" class="upstream-chip-list">
+            <text
+              v-for="item in upstreamMaterials"
+              :key="item.id"
+              class="upstream-chip upstream-chip--material"
+              @tap="handleEntityOpen(item)"
+            >
+              {{ item.name }}
+            </text>
+          </view>
+          <text v-else class="upstream-empty">暂无上游关联的原材料</text>
+        </view>
+        <view class="upstream-group">
+          <text class="upstream-group-title">上游加工工艺</text>
+          <view v-if="upstreamProcesses.length" class="upstream-chip-list">
+            <text
+              v-for="item in upstreamProcesses"
+              :key="item.id"
+              class="upstream-chip upstream-chip--process"
+              @tap="handleEntityOpen(item)"
+            >
+              {{ item.name }}
+            </text>
+          </view>
+          <text v-else class="upstream-empty">暂无上游关联的加工工艺</text>
+        </view>
+      </view>
+
+      <view v-if="riskNotice" class="risk-ticket">
         <view class="risk-ticket__head">
           <AppIcon name="report" variant="warning" size="40rpx" />
           <view class="risk-head-copy">
@@ -143,7 +232,7 @@
         </view>
       </view>
 
-      <view class="comparison-board">
+      <view v-if="industryComparison.length" class="comparison-board">
         <view class="comparison-head">
           <text class="comparison-title">对比展示</text>
           <text class="comparison-note">同名不默认互换</text>
@@ -162,7 +251,7 @@
       </view>
     </scroll-view>
 
-    <view class="detail-bottom-bar">
+    <view v-if="loaded && !notFound" class="detail-bottom-bar">
       <view class="bottom-secondary-actions">
         <button class="bottom-mini-action" @tap="handleSupplierCapabilityOpen">
           <AppIcon name="badge" variant="dark" size="34rpx" />
@@ -196,155 +285,131 @@
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 
-import { getWujinEntityDetail } from "@/api/wujin/detail";
+import { getWujinEntityDetail, getWujinProductDetail } from "@/api/wujin/detail";
+import { getWujinLaneProducts } from "@/api/wujin/search";
 import { showToast } from "@/utils/toast";
-import { sanitizeWujinImageList } from "@/utils/wujinImage";
+import { sanitizeWujinImageList, sanitizeWujinImageUrl } from "@/utils/wujinImage";
 
 defineOptions({ name: "WujinMiniDetail" });
 
-const DEFAULT_PRODUCT_IMAGE = "";
-
-const laneOptions = [
-  { label: "商品", value: "PRODUCT" },
-  { label: "工艺", value: "PROCESS" },
-  { label: "原材料", value: "MATERIAL" },
+const detailTabs = [
+  { label: "规格参数", value: "spec" },
+  { label: "技术图纸", value: "drawing" },
+  { label: "质检报告", value: "report" },
+  { label: "相关产品", value: "related" },
 ];
 
+// productId 打开商城商品真实详情；否则按产业链实体（id 或 keyword + lane）打开工艺/原材料详情
+const productId = ref("");
 const entityId = ref("");
 const entityType = ref("");
 const currentLane = ref("PRODUCT");
 const keyword = ref("");
 const sourceKeyword = ref("");
 const statusBarHeight = ref(0);
-const detail = ref(buildFallbackDetail());
+const detail = ref(null);
+const loaded = ref(false);
+const activeTab = ref("spec");
+const entityRelatedProducts = ref([]);
 
 const headerStyle = computed(() => ({
   paddingTop: `${statusBarHeight.value}px`,
 }));
 
-const detailSections = computed(() => detail.value.sections || []);
-const crossIndustryTips = computed(() => detail.value.crossIndustryTips || []);
-const industryComparison = computed(() => detail.value.industryComparison || []);
+const isProductMode = computed(() => Boolean(productId.value));
+const notFound = computed(() => loaded.value && (!detail.value || detail.value.exists === false));
+const notFoundText = computed(() => {
+  if (isProductMode.value) {
+    return "该商品已下架或不存在";
+  }
+  return detail.value?.summary || "该实体已下架或不存在";
+});
+const displayName = computed(() => detail.value?.name || keyword.value || "五金详情");
+const summaryText = computed(() =>
+  isProductMode.value ? detail.value?.introduction || "" : detail.value?.summary || "",
+);
 
 const detailImages = computed(() => {
-  const candidates = [
-    detail.value.images,
-    detail.value.imageList,
-    detail.value.gallery,
-    detail.value.coverImage,
-    detail.value.coverUrl,
-    detail.value.imageUrl,
-    detail.value.picUrl,
-  ];
-  return candidates
-    .flatMap((item) => normalizeImageList(item))
-    .flatMap((item) => sanitizeWujinImageList(item))
-    .slice(0, 5);
+  if (!detail.value) {
+    return [];
+  }
+  const candidates = [detail.value.picUrl, ...(detail.value.sliderPicUrls || [])];
+  return [...new Set(sanitizeWujinImageList(candidates.filter(Boolean)))].slice(0, 5);
 });
-
-const activeProductImage = computed(() => detailImages.value[0] || DEFAULT_PRODUCT_IMAGE);
-const galleryCountText = computed(() => detailImages.value.length ? `1/${detailImages.value.length}` : "无图");
-const activeDetailTag = computed(
-  () => detail.value.displayTag || laneDisplayTag(currentLane.value) || detail.value.entityLabel,
-);
+const activeProductImage = computed(() => detailImages.value[0] || "");
+const galleryCountText = computed(() => (detailImages.value.length ? `1/${detailImages.value.length}` : "无图"));
 
 const productTags = computed(() => {
   const tags = [
-    activeDetailTag.value,
-    ...(Array.isArray(detail.value.tags) ? detail.value.tags : []),
-    detail.value.industry,
-    detail.value.certification,
+    laneDisplayTag(detail.value?.lane || currentLane.value),
+    detail.value?.brandName,
+    detail.value?.entityName,
+    ...(Array.isArray(detail.value?.tags) ? detail.value.tags : []),
+    detail.value?.industry,
   ];
-  return tags
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter(Boolean)
-    .slice(0, 4);
+  return [...new Set(tags.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean))].slice(0, 5);
 });
 
-const priceParts = computed(() => parsePrice(detail.value.price || detail.value.unitPrice));
-const moqText = computed(() => firstText(detail.value.moq, detail.value.minOrder, "100个"));
-const inventoryText = computed(() =>
-  firstText(detail.value.stock, detail.value.inventory, detail.value.stockText, "56,800 个"),
-);
-const deliveryText = computed(() =>
-  firstText(detail.value.delivery, detail.value.deliveryTime, detail.value.leadTime, "24h发货"),
-);
+const priceParts = computed(() => {
+  const price = detail.value?.price;
+  if (typeof price === "number") {
+    return { symbol: "¥", amount: (price / 100).toFixed(2), unit: "" };
+  }
+  const text = firstText(price);
+  const matched = text.match(/^([¥￥])\s*([0-9]+(?:\.[0-9]+)?)(.*)$/);
+  if (matched) {
+    return { symbol: matched[1], amount: matched[2], unit: matched[3] };
+  }
+  return { symbol: "", amount: text || "询价", unit: "" };
+});
+const moqText = computed(() => {
+  const moq = detail.value?.minOrderQuantity;
+  return moq ? `${moq}起订` : firstText(detail.value?.moq, "面议");
+});
+const inventoryText = computed(() => {
+  const stock = detail.value?.stock;
+  return stock === undefined || stock === null ? "以供应商确认为准" : `${stock}`;
+});
+const deliveryText = computed(() => {
+  const days = detail.value?.deliveryDays;
+  return days ? `${days}天发货` : "以供应商确认为准";
+});
 const riskNotice = computed(() =>
-  firstText(
-    detail.value.riskNotice,
-    detail.value.riskNote,
-    crossIndustryTips.value[0],
-    "注意：该型号适用于混凝土基材。不同基材的钻孔深度及承载力衰减需符合专业工程要求，请勿直接替代使用以免发生锚固失效。",
-  ),
+  firstText(detail.value?.riskNote, (detail.value?.crossIndustryTips || [])[0]),
 );
+const industryComparison = computed(() => detail.value?.industryComparison || []);
+const upstreamMaterials = computed(() => detail.value?.upstreamMaterials || []);
+const upstreamProcesses = computed(() => detail.value?.upstreamProcesses || []);
 
 const specificationRows = computed(() => {
-  const rows = [
-    ["规格型号", firstText(detail.value.spec, detail.value.model, "M10*80")],
-    ["材料", firstText(detail.value.material, detail.value.materialName, "碳钢 Q235")],
-    ["表面处理", firstText(detail.value.surfaceTreatment, detail.value.finish, "热镀锌 ≥ 8μm")],
-    ["钻孔直径", firstText(detail.value.holeDiameter, detail.value.drillDiameter, "Φ12mm")],
-    ["埋入深度", firstText(detail.value.embedDepth, detail.value.anchorDepth, "≥ 70mm")],
-    ["抗拉承载", firstText(detail.value.tensileLoad, detail.value.loadCapacity, "≥ 7.00kN (混凝土 C20)")],
-    ["执行标准", firstText(detail.value.standard, detail.value.certification, "GB/T 22795-2008")],
-  ];
-
-  const sectionRows = detailSections.value
+  const rows = isProductMode.value ? detail.value?.specs : detail.value?.sections;
+  return (Array.isArray(rows) ? rows : [])
     .filter((item) => item && item.label && item.value)
-    .map((item) => [item.label, item.value]);
-
-  const mergedRows = currentLane.value === "PRODUCT" ? rows : sectionRows.concat(rows.slice(0, 3));
-  const seen = new Set();
-  return mergedRows
-    .filter(([label]) => {
-      if (seen.has(label)) {
-        return false;
-      }
-      seen.add(label);
-      return true;
-    })
-    .map(([label, value]) => ({ label, value }));
+    .map((item) => ({ label: item.label, value: item.value }));
 });
 
-function normalizeImageList(value) {
-  if (!value) {
-    return [];
-  }
-  if (Array.isArray(value)) {
-    return value;
-  }
-  if (typeof value !== "string") {
-    return [];
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return [];
-  }
-  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn("Wujin detail image list parse failed", error);
-    }
-  }
-  return trimmed.split(/[,，]/).map((item) => item.trim());
-}
+const descriptionNodes = computed(() => {
+  const html = isProductMode.value ? firstText(detail.value?.description) : "";
+  // 商品图文详情中的图片按屏宽自适应
+  return html ? html.replace(/<img/gi, '<img style="max-width:100%;height:auto;display:block;"') : "";
+});
 
-function parsePrice(rawValue) {
-  const rawText = firstText(rawValue, "¥0.28/个");
-  if (/询价|报价|可议/.test(rawText)) {
-    return { symbol: "", amount: rawText, unit: "" };
+const relatedProducts = computed(() => {
+  const list = isProductMode.value ? detail.value?.relatedProducts : entityRelatedProducts.value;
+  return (Array.isArray(list) ? list : []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    lane: item.lane,
+    image: sanitizeWujinImageUrl(item.picUrl),
+    price: formatPrice(item.price),
+  }));
+});
+
+function formatPrice(value) {
+  if (value === undefined || value === null || value === "") {
+    return "待报价";
   }
-  const matched = rawText.match(/^([¥￥])?\s*([0-9]+(?:\.[0-9]+)?)(.*)$/);
-  if (!matched) {
-    return { symbol: "", amount: rawText, unit: "" };
-  }
-  return {
-    symbol: matched[1] || "¥",
-    amount: matched[2],
-    unit: matched[3] || "/个",
-  };
+  return typeof value === "number" ? `¥${(value / 100).toFixed(2)}` : String(value);
 }
 
 function firstText(...values) {
@@ -360,19 +425,6 @@ function firstText(...values) {
   return "";
 }
 
-function laneName(lane) {
-  return laneOptions.find((item) => item.value === lane)?.label || lane || "-";
-}
-
-function laneEntityLabel(lane) {
-  const map = {
-    PRODUCT: "商品详情",
-    PROCESS: "工艺详情",
-    MATERIAL: "原材料详情",
-  };
-  return map[lane] || "五金详情";
-}
-
 function laneDisplayTag(lane) {
   const map = {
     PRODUCT: "成品",
@@ -382,92 +434,62 @@ function laneDisplayTag(lane) {
   return map[lane] || "";
 }
 
-function buildFallbackDetail() {
-  const name = keyword.value || "碳钢膨胀螺丝 M10*80";
-  const lane = currentLane.value || "PRODUCT";
-  const label = laneEntityLabel(lane);
-  const laneSections = {
-    PRODUCT: [
-      { label: "规格型号", value: "M10*80" },
-      { label: "材料", value: "碳钢 Q235" },
-      { label: "表面处理", value: "热镀锌 ≥ 8μm" },
-    ],
-    PROCESS: [
-      { label: "工艺能力", value: "支持打样、小批量和批量加工的能力说明" },
-      { label: "设备要求", value: "展示加工设备、精度、表面处理和检测能力" },
-      { label: "适配商品", value: "承接搜索上下文中的成品或半成品需求" },
-    ],
-    MATERIAL: [
-      { label: "材料牌号", value: "展示牌号、产地、规格和库存状态" },
-      { label: "适用成品", value: "关联下游成品与典型应用场景" },
-      { label: "供应方式", value: "现货、期货、分切、配送等供给能力" },
-    ],
-  };
-
-  return {
-    id: entityId.value,
-    name,
-    entityLabel: label,
-    displayTag: laneDisplayTag(lane),
-    sectionTitle: `${laneName(lane)}详情`,
-    summary: `${name} 的${label}已整理关键规格、供应能力与跨行业差异。`,
-    industry: "国标",
-    price: "¥0.28/个",
-    moq: "100个",
-    stock: "56,800 个",
-    delivery: "24h发货",
-    spec: "M10*80",
-    material: "碳钢 Q235",
-    surfaceTreatment: "热镀锌 ≥ 8μm",
-    certification: "碳钢",
-    images: [],
-    sections: laneSections[lane] || laneSections.PRODUCT,
-    crossIndustryTips: [
-      "注意：该型号适用于混凝土基材。不同基材（如砖墙、空心砖）的钻孔深度及承载力衰减需符合专业工程要求，请勿直接替代使用以免发生锚固失效。",
-      "同名工艺在耐腐蚀、食品接触、承压件场景下不能默认等价。",
-    ],
-    industryComparison: [
-      {
-        industry: "通用五金",
-        standard: "关注规格、交期、批量价格和常规质检。",
-        note: "适合普通采购和快速比价。",
-      },
-      {
-        industry: "高要求行业",
-        standard: "关注认证、追溯批次、检测报告和稳定供应。",
-        note: "需要供应商补充资质和样品验证。",
-      },
-    ],
-  };
-}
-
 async function loadDetail() {
+  loaded.value = false;
   try {
-    const result = await getWujinEntityDetail({
-      id: entityId.value,
-      entityType: entityType.value,
-      lane: currentLane.value,
-      keyword: keyword.value,
-      sourceKeyword: sourceKeyword.value,
-    });
-    detail.value = result && Object.keys(result).length
-      ? {
-          ...buildFallbackDetail(),
-          ...result,
-        }
-      : buildFallbackDetail();
+    if (isProductMode.value) {
+      detail.value = await getWujinProductDetail(productId.value);
+      if (detail.value?.lane) {
+        currentLane.value = detail.value.lane;
+      }
+    } else {
+      detail.value = await getWujinEntityDetail({
+        id: entityId.value,
+        entityType: entityType.value,
+        lane: currentLane.value,
+        keyword: keyword.value,
+        sourceKeyword: sourceKeyword.value,
+      });
+      loadEntityRelatedProducts();
+    }
   } catch (error) {
     console.error("Wujin detail failed", error);
-    detail.value = buildFallbackDetail();
+    detail.value = null;
+  } finally {
+    loaded.value = true;
   }
+}
+
+async function loadEntityRelatedProducts() {
+  if (!detail.value?.exists || !detail.value?.name) {
+    return;
+  }
+  try {
+    const page = await getWujinLaneProducts({
+      keyword: detail.value.name,
+      lane: currentLane.value,
+      pageNo: 1,
+      pageSize: 6,
+    });
+    entityRelatedProducts.value = Array.isArray(page?.list) ? page.list : [];
+  } catch (error) {
+    console.warn("Wujin entity related products failed", error);
+  }
+}
+
+function contextKeyword() {
+  if (isProductMode.value) {
+    return detail.value?.entityName || detail.value?.name || keyword.value;
+  }
+  return detail.value?.name || keyword.value;
 }
 
 function buildContextQuery(extra = {}) {
   const query = {
-    id: entityId.value,
-    entityType: entityType.value,
+    id: isProductMode.value ? detail.value?.entityId : entityId.value || detail.value?.id,
+    entityType: isProductMode.value ? "PRODUCT" : entityType.value,
     lane: currentLane.value,
-    keyword: keyword.value || detail.value.name,
+    keyword: contextKeyword(),
     sourceKeyword: sourceKeyword.value,
     ...extra,
   };
@@ -481,6 +503,23 @@ function handleBack() {
   const pages = typeof getCurrentPages === "function" ? getCurrentPages() : [];
   if (pages.length > 1) {
     uni.navigateBack();
+    return;
+  }
+  uni.reLaunch({ url: "/pages/wujin/search" });
+}
+
+function handleBackToSearch() {
+  const pages = typeof getCurrentPages === "function" ? getCurrentPages() : [];
+  const previous = pages.length > 1 ? pages[pages.length - 2] : null;
+  if (previous?.route === "pages/wujin/search-result") {
+    uni.navigateBack();
+    return;
+  }
+  const searchKeyword = sourceKeyword.value || keyword.value;
+  if (searchKeyword) {
+    uni.redirectTo({
+      url: `/pages/wujin/search-result?keyword=${encodeURIComponent(searchKeyword)}`,
+    });
     return;
   }
   uni.reLaunch({ url: "/pages/wujin/search" });
@@ -502,9 +541,24 @@ function handleChatOpen() {
   uni.navigateTo({ url: "/pages/messages/index" });
 }
 
-function handleSupplierCapabilityOpen() {
+function handleRelatedOpen(item = {}) {
   uni.navigateTo({
-    url: `/pages/wujin/supplier-capability?${buildContextQuery()}`,
+    url: `/pages/wujin/detail?productId=${encodeURIComponent(item.id || "")}&lane=${encodeURIComponent(item.lane || currentLane.value)}&keyword=${encodeURIComponent(item.name || "")}&sourceKeyword=${encodeURIComponent(sourceKeyword.value)}`,
+  });
+}
+
+function handleEntityOpen(item = {}) {
+  uni.navigateTo({
+    url: `/pages/wujin/detail?id=${encodeURIComponent(item.id || "")}&lane=${encodeURIComponent(item.lane || "")}&keyword=${encodeURIComponent(item.name || "")}&sourceKeyword=${encodeURIComponent(sourceKeyword.value)}`,
+  });
+}
+
+function handleSupplierCapabilityOpen() {
+  const supplierQuery = isProductMode.value && detail.value?.merchantId
+    ? { supplierId: detail.value.merchantId }
+    : {};
+  uni.navigateTo({
+    url: `/pages/wujin/supplier-capability?${buildContextQuery(supplierQuery)}`,
   });
 }
 
@@ -517,9 +571,9 @@ function handleTraceMapOpen() {
 function handleSourcingOpen() {
   uni.navigateTo({
     url: `/pages/wujin/sourcing?${buildContextQuery({
-      keyword: keyword.value || detail.value.name,
-      sourceKeyword: sourceKeyword.value || detail.value.name,
-      sourceLane: "PRODUCT",
+      keyword: contextKeyword(),
+      sourceKeyword: sourceKeyword.value || displayName.value,
+      sourceLane: currentLane.value,
       entryPath: "PRODUCT_DETAIL",
     })}`,
   });
@@ -528,10 +582,13 @@ function handleSourcingOpen() {
 function handleMaterialLaneOpen() {
   uni.navigateTo({
     url: `/pages/wujin/search-result?${buildContextQuery({
-      keyword: keyword.value || detail.value.name,
-      sourceKeyword: sourceKeyword.value || detail.value.name,
-      sourceLane: "PRODUCT",
-      sourceProductId: entityType.value === "PRODUCT" ? entityId.value : undefined,
+      id: undefined,
+      entityType: undefined,
+      lane: undefined,
+      keyword: displayName.value,
+      sourceKeyword: sourceKeyword.value || displayName.value,
+      sourceLane: currentLane.value,
+      sourceProductId: isProductMode.value ? productId.value : undefined,
       requestedLane: "MATERIAL",
       entryPath: "PRODUCT_DETAIL_MATERIAL",
     })}`,
@@ -540,7 +597,8 @@ function handleMaterialLaneOpen() {
 
 function initStatusBarHeight() {
   try {
-    statusBarHeight.value = uni.getSystemInfoSync()?.statusBarHeight || 0;
+    const sysInfo = uni.getWindowInfo ? uni.getWindowInfo() : uni.getSystemInfoSync();
+    statusBarHeight.value = sysInfo?.statusBarHeight || 0;
   } catch (error) {
     statusBarHeight.value = 0;
   }
@@ -548,14 +606,16 @@ function initStatusBarHeight() {
 
 onLoad((options = {}) => {
   initStatusBarHeight();
-  entityId.value = options.id || "";
+  // 兼容旧链接：entityType=PRODUCT&id=<商品编号>
+  productId.value = options.productId
+    || (options.entityType === "PRODUCT" && options.id ? options.id : "");
+  entityId.value = productId.value ? "" : options.id || "";
   entityType.value = options.entityType || "";
   currentLane.value = options.lane || "PRODUCT";
   keyword.value = options.keyword ? decodeURIComponent(options.keyword) : "";
   sourceKeyword.value = options.sourceKeyword
     ? decodeURIComponent(options.sourceKeyword)
     : "";
-  detail.value = buildFallbackDetail();
   loadDetail();
 });
 </script>
@@ -1141,5 +1201,177 @@ onLoad((options = {}) => {
   border: 1rpx solid #cbbda4;
   background: #f0f2f4;
   color: #111111;
+}
+
+.detail-state-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 18rpx;
+  margin: 48rpx 24rpx;
+  padding: 64rpx 32rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+}
+
+.detail-state-icon {
+  display: flex;
+  width: 132rpx;
+  height: 132rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f3f5f8;
+}
+
+.detail-state-title {
+  color: #111111;
+  font-size: 30rpx;
+  font-weight: 900;
+  text-align: center;
+}
+
+.detail-state-text {
+  color: #6c7580;
+  font-size: 25rpx;
+  text-align: center;
+}
+
+.detail-state-button {
+  width: 320rpx;
+  margin-top: 12rpx;
+}
+
+.purchase-intro {
+  color: #5d6673;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.detail-tab {
+  cursor: pointer;
+}
+
+.tab-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 18rpx;
+  padding: 48rpx 24rpx;
+}
+
+.tab-empty-text {
+  color: #8a929d;
+  font-size: 25rpx;
+}
+
+.tab-empty-button {
+  width: 260rpx;
+}
+
+.detail-description {
+  display: grid;
+  gap: 12rpx;
+  padding-top: 20rpx;
+}
+
+.detail-description-title {
+  color: #111111;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.related-panel {
+  padding: 20rpx 0;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.related-card {
+  display: grid;
+  gap: 8rpx;
+  min-width: 0;
+  padding: 12rpx;
+  border: 1rpx solid #e2e6eb;
+  border-radius: 14rpx;
+  background: #ffffff;
+}
+
+.related-image {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 10rpx;
+  background: #eef1f5;
+}
+
+.related-image--empty {
+  background: linear-gradient(160deg, #f4f6f8 0%, #dce2e8 100%);
+}
+
+.related-name {
+  overflow: hidden;
+  color: #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-price {
+  color: #d92d20;
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
+.upstream-board {
+  display: grid;
+  gap: 20rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 24rpx;
+  border-radius: 18rpx;
+  background: #ffffff;
+}
+
+.upstream-group {
+  display: grid;
+  gap: 12rpx;
+}
+
+.upstream-group-title {
+  color: #111111;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.upstream-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.upstream-chip {
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.upstream-chip--material {
+  background: #dff6ea;
+  color: #167f61;
+}
+
+.upstream-chip--process {
+  background: #e8f0ff;
+  color: #2457c5;
+}
+
+.upstream-empty {
+  color: #8a929d;
+  font-size: 24rpx;
 }
 </style>

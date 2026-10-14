@@ -16,9 +16,9 @@
           confirm-type="search"
           placeholder="搜索螺栓、电镀、天然橡胶"
           type="text"
-          @confirm="submitSearch"
+          @confirm="handleKeywordSubmit"
         />
-        <button class="search-button" @tap="submitSearch">搜索</button>
+        <button class="search-button" @tap="handleKeywordSubmit">搜索</button>
       </view>
     </view>
 
@@ -36,162 +36,271 @@
         </view>
       </view>
 
-      <view v-if="searchResult" class="category-suggestion-panel">
-        <view class="category-suggestion-head">
-          <text class="category-suggestion-title">{{ activeLaneName }}分类</text>
-          <text class="category-suggestion-note">按分类继续筛选</text>
-        </view>
-        <view v-if="categoryGroups.length" class="category-suggestion-groups">
-          <view
-            v-for="group in categoryGroups"
-            :key="group.level"
-            class="category-suggestion-group"
-          >
-            <scroll-view
-              class="category-suggestion-list"
-              scroll-x
-              :show-scrollbar="false"
-            >
-              <view class="category-suggestion-list-inner">
-                <button
-                  v-for="item in group.categories"
-                  :key="item.categoryId || item.categoryPath"
-                  class="category-suggestion-chip"
-                  @tap="handleCategorySuggestionSelect(item)"
-                >
-                  <text class="category-suggestion-label">{{ categorySuggestionLabel(item) }}</text>
-                </button>
-              </view>
-            </scroll-view>
-          </view>
-        </view>
-        <text v-else class="category-suggestion-empty">暂无匹配的{{ activeLaneName }}分类</text>
-      </view>
-
       <view v-if="!searchResult" class="wujin-card empty-result-card">
         <text class="empty-result-title">{{ loading ? "正在搜索" : "输入关键词查看产业链结果" }}</text>
         <text class="empty-result-text">搜索结果会在这里按成品、加工、原材料三泳道展示。</text>
       </view>
 
-      <view v-if="searchResult" class="result-stack">
-        <view class="chain-result-head">
-          <text class="chain-title">产业链寻源</text>
-          <text class="chain-subtitle">{{ activeLane === "PRODUCT" ? "三泳道 · 成品优先" : "三泳道 · 上游溯源" }}</text>
+      <view v-else-if="noResult" class="search-empty-state">
+        <view class="search-empty-illustration">
+          <AppIcon name="search" variant="muted" size="72rpx" />
         </view>
-
-        <view v-if="riskWarningRequired" class="wujin-card wujin-risk">
-          <view class="wujin-section-head">
-            <text class="wujin-section-title">跨行业风险提示</text>
-            <AppIcon name="report" variant="warning" size="34rpx" />
-          </view>
-          <text class="wujin-text">{{ riskWarningText }}</text>
+        <text class="search-empty-title">未找到相关结果，试试其他关键词</text>
+        <text class="search-empty-text">没有与“{{ lastKeyword }}”匹配的商品、加工工艺或原材料</text>
+        <view class="hot-keyword-head">
+          <text class="hot-keyword-title">推荐热搜词</text>
         </view>
-
-        <view v-if="activeLane === 'PRODUCT'" class="product-result-list">
-          <view
-            v-for="item in productCards"
-            :key="item.key"
-            class="product-result-card"
-            @tap="handleRecommendSelect(item.raw)"
+        <view class="hot-keyword-list">
+          <button
+            v-for="item in HOT_WUJIN_SEARCH_KEYWORDS"
+            :key="item"
+            class="hot-keyword-chip"
+            @tap="handleHotKeywordSearch(item)"
           >
-            <view class="product-main">
-              <view class="product-image-wrap">
-                <image
-                  v-if="item.image"
-                  class="product-image"
-                  :src="item.image"
-                  mode="aspectFill"
-                  lazy-load
-                />
-                <view v-else class="product-image product-image--empty"></view>
-              </view>
-              <view class="product-copy">
-                <text class="product-title">{{ item.title }}</text>
-                <text class="product-supplier">{{ item.supplier }}</text>
-                <text class="product-price">{{ item.price }}</text>
-              </view>
-            </view>
-            <view class="product-tags">
-              <text class="material-tag">CCC认证</text>
-              <text class="material-tag">绑定4类原材料</text>
-            </view>
+            {{ item }}
+          </button>
+        </view>
+      </view>
+
+      <template v-else>
+        <view class="filter-bar">
+          <view
+            class="filter-item"
+            :class="{ active: activeDropdown === 'category' || selectedCategory }"
+            @tap="toggleDropdown('category')"
+          >
+            <text class="filter-text">{{ selectedCategory ? selectedCategory.name : `${activeLaneName}分类` }}</text>
+            <AppIcon
+              :name="activeDropdown === 'category' ? 'expand_less' : 'expand_more'"
+              variant="dark"
+              size="28rpx"
+            />
+          </view>
+          <view
+            class="filter-item"
+            :class="{ active: activeDropdown === 'brand' || selectedBrand }"
+            @tap="toggleDropdown('brand')"
+          >
+            <text class="filter-text">{{ selectedBrand ? selectedBrand.brandName : "品牌" }}</text>
+            <AppIcon
+              :name="activeDropdown === 'brand' ? 'expand_less' : 'expand_more'"
+              variant="dark"
+              size="28rpx"
+            />
+          </view>
+          <view
+            class="filter-item"
+            :class="{ active: activeDropdown === 'sort' || sortValue !== 'DEFAULT' }"
+            @tap="toggleDropdown('sort')"
+          >
+            <text class="filter-text">{{ activeSortLabel }}</text>
+            <AppIcon
+              :name="activeDropdown === 'sort' ? 'expand_less' : 'expand_more'"
+              variant="dark"
+              size="28rpx"
+            />
+          </view>
+
+          <view v-if="activeDropdown" class="filter-dropdown">
+            <scroll-view class="filter-dropdown-list" scroll-y>
+              <template v-if="activeDropdown === 'category'">
+                <view
+                  class="dropdown-option"
+                  :class="{ selected: !selectedCategory }"
+                  @tap="clearCategory"
+                >
+                  <text>全部{{ activeLaneName }}分类</text>
+                </view>
+                <view
+                  v-for="node in categoryRoots"
+                  :key="node.categoryId"
+                  class="dropdown-option"
+                  :class="{ selected: isCategoryInSelection(node) }"
+                  @tap="handleCategoryRootSelect(node)"
+                >
+                  <text>{{ node.name }}</text>
+                  <text v-if="hasChildren(node)" class="dropdown-option-more">选择{{ childLevelName(node) }}</text>
+                </view>
+                <view v-if="!categoryRoots.length" class="dropdown-empty">
+                  暂无匹配的{{ activeLaneName }}分类
+                </view>
+              </template>
+              <template v-else-if="activeDropdown === 'brand'">
+                <view
+                  class="dropdown-option"
+                  :class="{ selected: !selectedBrand }"
+                  @tap="handleBrandSelect(null)"
+                >
+                  <text>全部品牌</text>
+                </view>
+                <view
+                  v-for="brand in brandFacets"
+                  :key="brand.brandId"
+                  class="dropdown-option"
+                  :class="{ selected: selectedBrand && selectedBrand.brandId === brand.brandId }"
+                  @tap="handleBrandSelect(brand)"
+                >
+                  <text>{{ brand.brandName }}</text>
+                  <text class="dropdown-option-more">{{ brand.productCount }} 件</text>
+                </view>
+                <view v-if="!brandFacets.length" class="dropdown-empty">当前结果暂无品牌信息</view>
+              </template>
+              <template v-else>
+                <view
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  class="dropdown-option"
+                  :class="{ selected: sortValue === option.value }"
+                  @tap="handleSortSelect(option.value)"
+                >
+                  <text>{{ option.label }}</text>
+                </view>
+              </template>
+            </scroll-view>
+          </view>
+        </view>
+        <view
+          v-if="activeDropdown"
+          class="filter-dropdown-mask"
+          @tap="closeDropdown"
+          @touchmove.stop.prevent
+        ></view>
+
+        <view v-if="selectedCategory || selectedBrand" class="active-filters">
+          <view v-if="selectedCategory" class="active-filter-chip" @tap="clearCategory">
+            <text class="active-filter-text">{{ selectedCategory.pathNames.join(" / ") }}</text>
+            <AppIcon name="close" variant="dark" size="24rpx" />
+          </view>
+          <view v-if="selectedBrand" class="active-filter-chip" @tap="handleBrandSelect(null)">
+            <text class="active-filter-text">{{ selectedBrand.brandName }}</text>
+            <AppIcon name="close" variant="dark" size="24rpx" />
           </view>
         </view>
 
-        <template v-else>
-          <view class="wujin-card material-card">
-            <view class="material-head">
-              <text class="material-title">{{ chainMaterial.name }}</text>
-              <text class="material-ratio">{{ materialRatio }}%</text>
+        <view class="result-stack">
+          <view class="chain-result-head">
+            <text class="chain-title">产业链寻源</text>
+            <text class="chain-subtitle">{{ activeLane === "PRODUCT" ? "三泳道 · 成品优先" : "三泳道 · 上游溯源" }}</text>
+          </view>
+
+          <view v-if="riskWarningRequired" class="wujin-card wujin-risk">
+            <view class="wujin-section-head">
+              <text class="wujin-section-title">跨行业风险提示</text>
+              <AppIcon name="report" variant="warning" size="34rpx" />
             </view>
-            <view class="material-progress">
-              <view class="material-progress-bar" :style="{ width: `${materialRatio}%` }"></view>
-            </view>
-            <view class="material-tags">
-              <text
-                v-for="tag in chainMaterial.tags"
-                :key="tag"
-                class="material-tag"
+            <text class="wujin-text">{{ riskWarningText }}</text>
+          </view>
+
+          <view v-if="activeLane !== 'PRODUCT'" class="upstream-panel">
+            <text class="upstream-title">{{ upstreamTitle }}</text>
+            <view v-if="laneUpstream.length" class="upstream-list">
+              <button
+                v-for="entity in laneUpstream"
+                :key="entity.id"
+                class="upstream-chip"
+                @tap="handleEntityOpen(entity)"
               >
-                {{ tag }}
-              </text>
+                {{ entity.name }}
+              </button>
             </view>
-            <button class="wujin-button wujin-button--yellow material-action" @tap="handleDetailOpen(activeLaneSummary)">
-              查看详情
-            </button>
-            <text class="wujin-muted">{{ activeLaneSummary.summary }}</text>
-            <view class="material-actions">
+            <text v-else-if="laneLoaded" class="upstream-empty">{{ upstreamEmptyText }}</text>
+            <view class="upstream-actions">
               <button class="wujin-button wujin-button--yellow" @tap="handleTraceSearch">
                 一键寻源
               </button>
-              <button class="wujin-button wujin-button--line" @tap="handleTraceMapOpen(activeLaneSummary)">
+              <button class="wujin-button wujin-button--line" @tap="handleTraceMapOpen">
                 溯源图谱
               </button>
             </view>
           </view>
 
-          <view
-            class="downstream-section"
-            :class="{ 'raw-material-products': activeLane === 'MATERIAL' }"
-          >
-            <view class="wujin-section-head">
-              <text class="wujin-section-title">
-                {{ activeLane === "MATERIAL" ? "原材料商品" : "相关商品" }}
-              </text>
-              <text class="wujin-section-note">{{ downstreamProducts.length }} 条</text>
-            </view>
-            <view v-if="downstreamProducts.length" class="downstream-grid">
-              <view
-                v-for="item in downstreamProducts"
-                :key="item.key"
-                class="downstream-card"
-                @tap="handleRecommendSelect(item.raw)"
-              >
-                <view class="downstream-image-wrap">
+          <view v-if="productCards.length" class="product-result-list">
+            <view
+              v-for="item in productCards"
+              :key="item.key"
+              class="product-result-card"
+              @tap="handleProductOpen(item.raw)"
+            >
+              <view class="product-main">
+                <view class="product-image-wrap">
                   <image
                     v-if="item.image"
-                    class="downstream-image"
+                    class="product-image"
                     :src="item.image"
                     mode="aspectFill"
                     lazy-load
-                />
-                <view v-else class="downstream-image downstream-image--empty"></view>
+                  />
+                  <view v-else class="product-image product-image--empty"></view>
+                </view>
+                <view class="product-copy">
+                  <text class="product-title">{{ item.title }}</text>
+                  <text v-if="item.subtitle" class="product-supplier">{{ item.subtitle }}</text>
+                  <text class="product-price">{{ item.price }}</text>
+                  <text v-if="item.meta" class="product-meta">{{ item.meta }}</text>
+                </view>
               </view>
-              <text v-if="item.entityName" class="downstream-material">{{ item.entityName }}</text>
-              <text class="downstream-title">{{ item.title }}</text>
-              <text class="downstream-supplier">{{ item.supplier }}</text>
-              <text class="downstream-price">{{ item.price }}</text>
-              <button class="downstream-more" @tap.stop="handleRecommendSelect(item.raw)">
-                查看更多
-              </button>
+              <view v-if="item.tags.length" class="product-tag-list">
+                <text v-for="tag in item.tags" :key="tag" class="product-tag">{{ tag }}</text>
               </view>
-            </view>
-            <view v-else class="lane-product-empty">
-              <text class="lane-product-empty-title">当前分类暂无可售商品</text>
-              <text class="wujin-muted">可通过一键寻源提交原材料采购需求</text>
             </view>
           </view>
-        </template>
+
+          <view v-else-if="laneLoaded" class="lane-product-empty">
+            <text class="lane-product-empty-title">{{ laneEmptyTitle }}</text>
+            <text v-if="activeLane !== 'PRODUCT'" class="wujin-muted">可通过一键寻源提交采购需求</text>
+          </view>
+
+          <view v-if="productCards.length" class="load-more">
+            <text>{{ laneLoading ? "加载中..." : laneFinished ? "没有更多了" : "上拉加载更多" }}</text>
+          </view>
+        </view>
+      </template>
+    </view>
+
+    <view
+      v-if="categoryPopupVisible"
+      class="category-popup-mask"
+      @tap="closeCategoryPopup"
+      @touchmove.stop.prevent
+    ></view>
+    <view v-if="categoryPopupVisible" class="category-popup">
+      <view class="category-popup-head">
+        <text class="category-popup-title">{{ popupRoot ? popupRoot.name : "" }}</text>
+        <button class="category-popup-close" @tap="closeCategoryPopup">
+          <AppIcon name="close" variant="dark" size="32rpx" />
+        </button>
+      </view>
+      <text class="category-popup-path">{{ popupPathText }}</text>
+      <view class="category-popup-columns">
+        <scroll-view
+          v-for="(column, columnIndex) in popupColumns"
+          :key="column.parent.categoryId"
+          class="category-popup-column"
+          scroll-y
+        >
+          <text class="category-popup-level">{{ childLevelName(column.parent) }}</text>
+          <view
+            class="popup-option"
+            :class="{ selected: popupPath.length === columnIndex }"
+            @tap="handlePopupAllSelect(columnIndex)"
+          >
+            全部{{ column.parent.name }}
+          </view>
+          <view
+            v-for="node in column.parent.children"
+            :key="node.categoryId"
+            class="popup-option"
+            :class="{ selected: popupPath[columnIndex] && popupPath[columnIndex].categoryId === node.categoryId }"
+            @tap="handlePopupNodeSelect(columnIndex, node)"
+          >
+            <text>{{ node.name }}</text>
+            <text v-if="hasChildren(node)" class="popup-option-arrow">›</text>
+          </view>
+        </scroll-view>
+      </view>
+      <view class="category-popup-footer">
+        <button class="wujin-button wujin-button--line" @tap="handlePopupReset">重置</button>
+        <button class="wujin-button wujin-button--yellow" @tap="handlePopupConfirm">确定</button>
       </view>
     </view>
   </view>
@@ -201,10 +310,10 @@
 import { computed, ref } from "vue";
 import { onLoad, onReachBottom } from "@dcloudio/uni-app";
 
-import { getWujinProductRecommendations } from "@/api/wujin/recommend";
-import { searchWujin } from "@/api/wujin/search";
+import { getWujinLaneProducts, searchWujin } from "@/api/wujin/search";
 import { showToast } from "@/utils/toast";
 import { sanitizeWujinImageUrl } from "@/utils/wujinImage";
+import { HOT_WUJIN_SEARCH_KEYWORDS } from "./search-history.mjs";
 
 defineOptions({ name: "WujinMiniSearchResult" });
 
@@ -214,6 +323,16 @@ const laneOptions = [
   { label: "原材料", value: "MATERIAL", description: "材料与供给" },
 ];
 
+const sortOptions = [
+  { label: "综合排序", value: "DEFAULT" },
+  { label: "销量优先", value: "SALES" },
+  { label: "价格从低到高", value: "PRICE_ASC" },
+  { label: "价格从高到低", value: "PRICE_DESC" },
+];
+
+const LANE_PAGE_SIZE = 10;
+
+// keyword 是输入框内容；lastKeyword 是当前结果围绕的搜索词，分类/品牌筛选不会改写它
 const keyword = ref("");
 const lastKeyword = ref("");
 const requestedLane = ref("");
@@ -222,12 +341,25 @@ const sourceEntityId = ref("");
 const searchResult = ref(null);
 const loading = ref(false);
 const statusBarHeight = ref(0);
-const recommendProducts = ref([]);
-const recommendPageNo = ref(1);
-const recommendPageSize = 10;
-const recommendLoading = ref(false);
-const recommendFinished = ref(false);
-const recommendSearchKeyword = ref("");
+
+const laneProducts = ref([]);
+const laneTotal = ref(0);
+const lanePageNo = ref(1);
+const laneLoading = ref(false);
+const laneLoaded = ref(false);
+const laneFinished = ref(false);
+const laneEmptyHint = ref("");
+const laneUpstream = ref([]);
+const brandFacets = ref([]);
+let laneRequestSeq = 0;
+
+const selectedCategory = ref(null);
+const selectedBrand = ref(null);
+const sortValue = ref("DEFAULT");
+const activeDropdown = ref("");
+const categoryPopupVisible = ref(false);
+const popupRoot = ref(null);
+const popupPath = ref([]);
 
 const heroSafeStyle = computed(() => ({
   paddingTop: `calc(${statusBarHeight.value}px + 24rpx)`,
@@ -238,122 +370,56 @@ const activeLane = computed(() => requestedLane.value || defaultLane.value);
 const activeLaneName = computed(
   () => laneOptions.find((item) => item.value === activeLane.value)?.label || "相关",
 );
+const activeSortLabel = computed(
+  () => sortOptions.find((item) => item.value === sortValue.value)?.label || "综合排序",
+);
 const laneSummaries = computed(() => searchResult.value?.laneSummaries || []);
-const categorySuggestions = computed(() => {
-  const list = Array.isArray(searchResult.value?.categorySuggestions)
-    ? searchResult.value.categorySuggestions
-    : [];
-  return list
-    .filter((item) => item?.lane === activeLane.value)
-    .filter((item) => item?.categoryPath || item?.categoryName)
-    .slice(0, 8);
-});
-const categoryGroups = computed(() => {
-  const apiGroups = Array.isArray(searchResult.value?.categoryGroups)
-    ? searchResult.value.categoryGroups
-    : [];
-  const normalizedGroups = apiGroups
-    .map((group) => {
-      const categories = Array.isArray(group?.categories)
-        ? group.categories
-            .filter((item) => item?.lane === activeLane.value)
-            .filter((item) => item?.categoryPath || item?.categoryName)
-        : [];
-      const level = Number(group?.level) || categoryLevel(categories[0]);
-      return {
-        level,
-        categories,
-      };
-    })
-    .filter((group) => group.categories.length)
-    .sort((left, right) => left.level - right.level);
-  if (normalizedGroups.length) {
-    return normalizedGroups;
-  }
-
-  const legacyGroups = new Map();
-  categorySuggestions.value.forEach((item) => {
-    const level = categoryLevel(item);
-    const items = legacyGroups.get(level) || [];
-    items.push(item);
-    legacyGroups.set(level, items);
-  });
-  return [...legacyGroups.entries()]
-    .sort(([left], [right]) => left - right)
-    .map(([level, categories]) => ({
-      level,
-      categories,
-    }));
-});
-const relatedProducts = computed(() =>
-  Array.isArray(searchResult.value?.relatedProducts)
-    ? searchResult.value.relatedProducts
-    : [],
-);
 const activeLaneSummary = computed(
+  () => laneSummaries.value.find((item) => item.lane === activeLane.value) || {},
+);
+const categoryRoots = computed(() => {
+  const tree = Array.isArray(searchResult.value?.categoryTree) ? searchResult.value.categoryTree : [];
+  return tree.filter((node) => node?.lane === activeLane.value);
+});
+const totalLaneCount = computed(() =>
+  laneSummaries.value.reduce((sum, item) => sum + Number(item.resultCount || 0), 0),
+);
+const noResult = computed(
   () =>
-    laneSummaries.value.find((item) => item.lane === activeLane.value) ||
-    laneSummaries.value.find((item) => item.lane === "MATERIAL") ||
-    {},
+    Boolean(searchResult.value) &&
+    laneLoaded.value &&
+    totalLaneCount.value === 0 &&
+    !categoryRoots.value.length &&
+    !laneUpstream.value.length,
 );
-const materialRatio = computed(() => {
-  const count = Number(activeLaneSummary.value.resultCount || 0);
-  return Math.max(18, Math.min(78, count + 10));
-});
-const chainMaterial = computed(() => {
-  const keywordText = currentKeywordText();
-  if (activeLane.value === "MATERIAL" && categorySuggestions.value.length) {
-    const firstPath = categorySuggestions.value[0].categoryPath || "";
-    const segments = firstPath.split(/[>＞/]/).map((item) => item.trim()).filter(Boolean);
-    return {
-      name: segments.length > 1 ? segments.at(-2) : activeLaneName.value,
-      tags: categorySuggestions.value.slice(0, 4).map(categorySuggestionLabel),
-    };
-  }
-  const materialName = keywordText.includes("不锈钢")
-    ? "不锈钢材料"
-    : keywordText.includes("螺丝") || keywordText.includes("螺栓")
-      ? "钢材与表面处理"
-      : keywordText.includes("轮胎")
-        ? "橡胶材料"
-        : keywordText.includes("橡胶")
-          ? keywordText
-          : `${keywordText}上游材料`;
-  const tags = keywordText.includes("不锈钢")
-    ? ["304不锈钢", "316不锈钢", "冷镦线材"]
-    : keywordText.includes("螺丝") || keywordText.includes("螺栓")
-      ? ["碳钢线材", "不锈钢线材", "镀锌处理"]
-      : ["天然橡胶", "合成橡胶", "再生橡胶"];
-  return {
-    name: materialName,
-    tags,
-  };
-});
-const productCards = computed(() => {
-  const list = keywordMatchedProducts.value.length
-    ? keywordMatchedProducts.value
-    : buildFallbackProducts(currentKeywordText());
-  return list.slice(0, 3).map(normalizeProductCard);
-});
-const downstreamProducts = computed(() => {
-  if (activeLane.value === "MATERIAL") {
-    return relatedProducts.value.slice(0, 8).map(normalizeProductCard);
-  }
-  return keywordMatchedProducts.value.slice(0, 4).map(normalizeProductCard);
-});
-const keywordMatchedProducts = computed(() => {
-  const searchText = recommendSearchKeyword.value || currentKeywordText();
-  if (activeLane.value !== "PRODUCT" || !recommendProducts.value.length || !searchText) {
-    return recommendProducts.value;
-  }
-  const matched = recommendProducts.value.filter((item) => productMatchesKeyword(item, searchText));
-  return matched.length ? matched : [];
-});
-const riskWarningRequired = computed(
-  () => searchResult.value?.riskWarningRequired,
+const upstreamTitle = computed(
+  () =>
+    activeLaneSummary.value.summary ||
+    `与“${lastKeyword.value}”相关的上游${activeLane.value === "PROCESS" ? "加工工艺" : "原材料"}`,
 );
+const upstreamEmptyText = computed(() =>
+  activeLane.value === "PROCESS" ? "暂无上游关联的加工工艺" : "暂无上游关联的原材料",
+);
+const laneEmptyTitle = computed(() => laneEmptyHint.value || `当前${activeLaneName.value}泳道暂无商品`);
+const productCards = computed(() => laneProducts.value.map(normalizeProductCard));
+const riskWarningRequired = computed(() => searchResult.value?.riskWarningRequired);
 const riskWarningText = computed(
   () => searchResult.value?.riskWarningText || "不同应用场景可能存在不可互换风险。",
+);
+const popupColumns = computed(() => {
+  if (!popupRoot.value) {
+    return [];
+  }
+  const columns = [{ parent: popupRoot.value }];
+  popupPath.value.forEach((node) => {
+    if (hasChildren(node)) {
+      columns.push({ parent: node });
+    }
+  });
+  return columns;
+});
+const popupPathText = computed(() =>
+  [popupRoot.value?.name, ...popupPath.value.map((node) => node.name)].filter(Boolean).join(" / "),
 );
 
 function laneCount(lane) {
@@ -361,25 +427,17 @@ function laneCount(lane) {
   return searchResult.value && summary ? ` ${summary.resultCount || 0}` : "";
 }
 
-function categorySuggestionLabel(item = {}) {
-  if (item.categoryName) {
-    return item.categoryName;
-  }
-  const categoryPath = item.categoryPath || "";
-  const segments = categoryPath.split(/[>＞/]/).map((segment) => segment.trim()).filter(Boolean);
-  return segments.at(-1) || categoryPath || "分类";
+function hasChildren(node) {
+  return Array.isArray(node?.children) && node.children.length > 0;
 }
 
-function categoryLevel(item = {}) {
-  const level = Number(item.level);
-  if (Number.isInteger(level) && level > 0) {
-    return level;
-  }
-  const segments = String(item.categoryPath || "")
-    .split(/[>＞/]/)
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-  return Math.max(1, segments.length);
+function childLevelName(node) {
+  const names = { 1: "一级分类", 2: "二级分类", 3: "三级分类" };
+  return names[Number(node?.level)] || "下级分类";
+}
+
+function isCategoryInSelection(node) {
+  return Boolean(selectedCategory.value?.pathIds?.includes(node.categoryId));
 }
 
 function pick(item, keys, fallback = "") {
@@ -398,66 +456,94 @@ function formatPrice(value) {
   return text.startsWith("¥") || text.startsWith("￥") ? text : `¥${text}`;
 }
 
-function currentKeywordText() {
-  return (lastKeyword.value || keyword.value || searchResult.value?.keyword || "五金商品").trim();
-}
-
-function splitSearchTokens(text) {
-  return String(text || "")
-    .replace(/[，,、/\\|]+/g, " ")
-    .split(/\s+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function productMatchesKeyword(item = {}, searchText = "") {
-  const tokens = splitSearchTokens(searchText);
-  if (!tokens.length) {
-    return true;
-  }
-  const haystack = [
-    item.name,
-    item.title,
-    item.productName,
-    item.goodsName,
-    item.keyword,
-    item.supplierName,
-    item.shopName,
-    item.companyName,
-  ].filter(Boolean).join(" ");
-  return tokens.some((token) => haystack.includes(token));
-}
-
-function buildFallbackProducts(searchText = "") {
-  const keywordText = searchText || "五金商品";
-  if (keywordText.includes("不锈钢") || keywordText.includes("螺丝") || keywordText.includes("螺栓")) {
-    return [
-      { id: "fallback-stainless-screw-1", name: "304不锈钢螺丝 M4*20", price: 1280, shopName: "华固标准件工厂" },
-      { id: "fallback-stainless-screw-2", name: "十字沉头不锈钢螺丝 M5*30", price: 1560, shopName: "坚成紧固件供应商" },
-    ];
-  }
-  if (keywordText.includes("橡胶") || keywordText.includes("轮胎")) {
-    return [
-      { id: "fallback-rubber-1", name: "高耐磨乘用车轮胎 205/55R16", price: 36800, shopName: "鑫诚轮胎旗舰店" },
-      { id: "fallback-rubber-2", name: "工程车橡胶轮胎 12.00R20", price: 125000, shopName: "宏量优质店" },
-    ];
-  }
-  return [
-    { id: "fallback-generic-1", name: `${keywordText} 标准现货`, price: 9800, shopName: "五金优选供应商" },
-    { id: "fallback-generic-2", name: `${keywordText} 定制加工件`, price: 16800, shopName: "本地工业品工厂" },
-  ];
-}
-
 function normalizeProductCard(item = {}, index) {
+  const tags = Array.isArray(item.tags) ? item.tags.filter(Boolean) : [];
+  if (Number(item.materialCount) > 0) {
+    tags.push(`绑定${item.materialCount}类原材料`);
+  }
+  const meta = [
+    item.minOrderQuantity ? `起订 ${item.minOrderQuantity}` : "",
+    item.deliveryDays ? `${item.deliveryDays}天发货` : "",
+    item.serviceArea || "",
+  ].filter(Boolean);
   return {
     raw: item,
-    key: pick(item, ["id", "productId", "goodsId", "skuId"], index),
+    key: pick(item, ["id"], index),
     image: sanitizeWujinImageUrl(pick(item, ["image", "imageUrl", "picUrl", "cover", "thumbnail"])),
-    title: pick(item, ["title", "name", "productName", "goodsName"], "五金商品"),
-    price: formatPrice(pick(item, ["price", "salePrice", "referencePrice", "minPrice"])),
-    supplier: pick(item, ["supplier", "supplierName", "shopName", "companyName"], "优选供应商"),
-    entityName: pick(item, ["entityName", "materialName"]),
+    title: pick(item, ["name", "title"], "五金商品"),
+    price: formatPrice(item.price),
+    subtitle: [item.brandName, item.entityName].filter(Boolean).join(" · "),
+    meta: meta.join(" · "),
+    tags: [...new Set(tags)].slice(0, 4),
   };
+}
+
+function resetFilters() {
+  selectedCategory.value = null;
+  selectedBrand.value = null;
+  sortValue.value = "DEFAULT";
+  activeDropdown.value = "";
+  categoryPopupVisible.value = false;
+}
+
+function resetLaneProducts() {
+  laneRequestSeq += 1;
+  laneProducts.value = [];
+  laneTotal.value = 0;
+  lanePageNo.value = 1;
+  laneLoading.value = false;
+  laneLoaded.value = false;
+  laneFinished.value = false;
+  laneEmptyHint.value = "";
+  laneUpstream.value = [];
+  brandFacets.value = [];
+}
+
+async function loadLaneProducts() {
+  if (laneLoading.value || laneFinished.value || !lastKeyword.value) {
+    return;
+  }
+  const requestSeq = laneRequestSeq;
+  laneLoading.value = true;
+  try {
+    const page = await getWujinLaneProducts({
+      keyword: lastKeyword.value,
+      lane: activeLane.value,
+      categoryId: selectedCategory.value?.categoryId,
+      brandId: selectedBrand.value?.brandId,
+      sourceProductId: sourceProductId.value || undefined,
+      sort: sortValue.value,
+      pageNo: lanePageNo.value,
+      pageSize: LANE_PAGE_SIZE,
+    });
+    if (requestSeq !== laneRequestSeq) {
+      return;
+    }
+    const list = Array.isArray(page?.list) ? page.list : [];
+    laneProducts.value = laneProducts.value.concat(list);
+    laneTotal.value = Number(page?.total || 0);
+    laneEmptyHint.value = page?.emptyHint || "";
+    laneUpstream.value = Array.isArray(page?.upstreamEntities) ? page.upstreamEntities : [];
+    brandFacets.value = Array.isArray(page?.brands) ? page.brands : [];
+    // 最后一页之后后端返回空列表，这里据此结束分页
+    laneFinished.value = list.length < LANE_PAGE_SIZE || laneProducts.value.length >= laneTotal.value;
+    lanePageNo.value += 1;
+  } catch (error) {
+    console.error("Wujin lane products failed", error);
+    if (requestSeq === laneRequestSeq) {
+      laneFinished.value = true;
+    }
+  } finally {
+    if (requestSeq === laneRequestSeq) {
+      laneLoading.value = false;
+      laneLoaded.value = true;
+    }
+  }
+}
+
+function reloadLaneProducts() {
+  resetLaneProducts();
+  loadLaneProducts();
 }
 
 async function submitSearch(extra = {}) {
@@ -481,8 +567,6 @@ async function submitSearch(extra = {}) {
       sourceProductId: extra.sourceProductId || sourceProductId.value || undefined,
       sourceEntityId: extra.sourceEntityId || sourceEntityId.value || undefined,
       industry: extra.industry,
-      categoryId: extra.categoryId,
-      categoryPath: extra.categoryPath,
       chainViewed: true,
       responseTimeMillis: Date.now() - startedAt,
     });
@@ -490,8 +574,8 @@ async function submitSearch(extra = {}) {
     keyword.value = result?.keyword || searchKeyword;
     lastKeyword.value = result?.keyword || searchKeyword;
     requestedLane.value = extra.requestedLane || "PRODUCT";
-    resetRecommendProducts();
-    loadRecommendProducts();
+    resetFilters();
+    reloadLaneProducts();
   } catch (error) {
     console.error("Wujin search failed", error);
   } finally {
@@ -499,139 +583,172 @@ async function submitSearch(extra = {}) {
   }
 }
 
-function resetRecommendProducts() {
-  recommendProducts.value = [];
-  recommendPageNo.value = 1;
-  recommendFinished.value = false;
-  recommendSearchKeyword.value = "";
+function handleKeywordSubmit() {
+  sourceProductId.value = "";
+  sourceEntityId.value = "";
+  // 新关键词回到成品泳道（成品优先），与首页进入结果页一致
+  submitSearch({ requestedLane: "PRODUCT", entryPath: "DIRECT_SEARCH" });
 }
 
-function recommendationKeywords() {
-  if (recommendSearchKeyword.value) {
-    return [recommendSearchKeyword.value];
-  }
-  const originalKeyword = lastKeyword.value || keyword.value;
-  if (activeLane.value === "PRODUCT") {
-    return [originalKeyword].filter(Boolean);
-  }
-  const laneKeywords = categorySuggestions.value.map(categorySuggestionLabel);
-  return [...new Set([...laneKeywords, originalKeyword].filter(Boolean))].slice(0, 4);
-}
-
-async function loadRecommendProducts() {
-  if (recommendLoading.value || recommendFinished.value) {
-    return;
-  }
-  if (activeLane.value === "MATERIAL") {
-    recommendFinished.value = true;
-    return;
-  }
-  recommendLoading.value = true;
-  try {
-    let result = null;
-    let list = [];
-    let matchedKeyword = "";
-    for (const searchKeyword of recommendationKeywords()) {
-      result = await getWujinProductRecommendations({
-        pageNo: recommendPageNo.value,
-        pageSize: recommendPageSize,
-        keyword: searchKeyword,
-        sortField: "salesCount",
-        sortAsc: false,
-      });
-      list = Array.isArray(result?.list) ? result.list : [];
-      matchedKeyword = searchKeyword;
-      if (list.length) {
-        break;
-      }
-    }
-    recommendSearchKeyword.value = matchedKeyword;
-    recommendProducts.value = recommendProducts.value.concat(list);
-    recommendFinished.value =
-      list.length < recommendPageSize ||
-      recommendProducts.value.length >= (result?.total || Number.MAX_SAFE_INTEGER);
-    recommendPageNo.value += 1;
-  } catch (error) {
-    console.error("Wujin recommendations failed", error);
-    recommendFinished.value = true;
-  } finally {
-    recommendLoading.value = false;
-  }
-}
-
-function handleRecommendSelect(item = {}) {
-  uni.navigateTo({
-    url: `/pages/wujin/detail?keyword=${encodeURIComponent(item.name || "五金商品")}&lane=PRODUCT&id=${encodeURIComponent(item.id || "")}&entityType=PRODUCT`,
-  });
+function handleHotKeywordSearch(item) {
+  keyword.value = item;
+  handleKeywordSubmit();
 }
 
 function handleLaneSwitch(lane) {
-  requestedLane.value = lane;
+  if (!lastKeyword.value) {
+    requestedLane.value = lane;
+    return;
+  }
+  // 切换泳道围绕当前搜索词，不使用输入框里尚未提交的内容
   submitSearch({
+    keyword: lastKeyword.value,
     requestedLane: lane,
     entryPath: "LANE_SWITCH",
-    sourceLane: defaultLane.value,
+    sourceLane: activeLane.value,
     sourceKeyword: lastKeyword.value,
     sourceProductId: sourceProductId.value || undefined,
     sourceEntityId: sourceEntityId.value || undefined,
   });
 }
 
+function toggleDropdown(name) {
+  activeDropdown.value = activeDropdown.value === name ? "" : name;
+}
+
+function closeDropdown() {
+  activeDropdown.value = "";
+}
+
+function applyCategory(path) {
+  const target = path[path.length - 1];
+  selectedCategory.value = target
+    ? {
+        categoryId: target.categoryId,
+        name: target.name,
+        pathIds: path.map((node) => node.categoryId),
+        pathNames: path.map((node) => node.name),
+      }
+    : null;
+  closeDropdown();
+  categoryPopupVisible.value = false;
+  reloadLaneProducts();
+  if (target) {
+    logCategoryFilter();
+  }
+}
+
+// 只记录筛选行为，不刷新搜索结果，搜索框仍保留原搜索词
+function logCategoryFilter() {
+  searchWujin(
+    {
+      keyword: lastKeyword.value,
+      requestedLane: activeLane.value,
+      entryPath: "CATEGORY_SUGGESTION",
+      sourceLane: activeLane.value,
+      sourceKeyword: lastKeyword.value,
+      categoryId: selectedCategory.value.categoryId,
+      categoryPath: selectedCategory.value.pathNames.join(" > "),
+      chainViewed: true,
+    },
+    { silent: true },
+  ).catch((error) => console.warn("Wujin category filter log failed", error));
+}
+
+function clearCategory() {
+  if (!selectedCategory.value) {
+    closeDropdown();
+    return;
+  }
+  applyCategory([]);
+}
+
+function handleCategoryRootSelect(node) {
+  if (!hasChildren(node)) {
+    applyCategory([node]);
+    return;
+  }
+  closeDropdown();
+  popupRoot.value = node;
+  const selectedIds = selectedCategory.value?.pathIds || [];
+  popupPath.value = selectedIds[0] === node.categoryId ? restorePopupPath(node, selectedIds.slice(1)) : [];
+  categoryPopupVisible.value = true;
+}
+
+function restorePopupPath(root, ids) {
+  const path = [];
+  let current = root;
+  ids.forEach((id) => {
+    const next = (current?.children || []).find((child) => child.categoryId === id);
+    if (next) {
+      path.push(next);
+      current = next;
+    }
+  });
+  return path;
+}
+
+function handlePopupAllSelect(columnIndex) {
+  popupPath.value = popupPath.value.slice(0, columnIndex);
+}
+
+function handlePopupNodeSelect(columnIndex, node) {
+  popupPath.value = [...popupPath.value.slice(0, columnIndex), node];
+}
+
+function handlePopupReset() {
+  popupPath.value = [];
+}
+
+function handlePopupConfirm() {
+  applyCategory([popupRoot.value, ...popupPath.value]);
+}
+
+function closeCategoryPopup() {
+  categoryPopupVisible.value = false;
+}
+
+function handleBrandSelect(brand) {
+  selectedBrand.value = brand ? { brandId: brand.brandId, brandName: brand.brandName } : null;
+  closeDropdown();
+  reloadLaneProducts();
+}
+
+function handleSortSelect(value) {
+  sortValue.value = value;
+  closeDropdown();
+  reloadLaneProducts();
+}
+
+function handleProductOpen(item = {}) {
+  uni.navigateTo({
+    url: `/pages/wujin/detail?productId=${encodeURIComponent(item.id || "")}&lane=${encodeURIComponent(item.lane || activeLane.value)}&keyword=${encodeURIComponent(item.name || "")}&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`,
+  });
+}
+
+function handleEntityOpen(entity = {}) {
+  uni.navigateTo({
+    url: `/pages/wujin/detail?id=${encodeURIComponent(entity.id || "")}&lane=${encodeURIComponent(entity.lane || activeLane.value)}&keyword=${encodeURIComponent(entity.name || "")}&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`,
+  });
+}
+
 function handleTraceSearch() {
-  const targetKeyword = lastKeyword.value || keyword.value;
-  if (!targetKeyword) {
+  if (!lastKeyword.value) {
     showToast("请先搜索五金商品、材料或工艺关键词");
     return;
   }
   uni.navigateTo({
-    url: `/pages/wujin/sourcing?keyword=${encodeURIComponent(targetKeyword)}&lane=MATERIAL&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`,
+    url: `/pages/wujin/sourcing?keyword=${encodeURIComponent(lastKeyword.value)}&lane=${encodeURIComponent(activeLane.value)}&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`,
   });
 }
 
-function buildSummaryContextUrl(pagePath, summary = {}) {
-  const baseUrl = `${pagePath}?keyword=${encodeURIComponent(lastKeyword.value || keyword.value)}&lane=${encodeURIComponent(summary.lane || activeLane.value)}&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`;
-  const extraQuery = {
-    id: summary.id,
-    entityType: summary.entityType,
-  };
-  const extraSearch = Object.entries(extraQuery)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-    .join("&");
-  return `${baseUrl}${extraSearch ? `&${extraSearch}` : ""}`;
-}
-
-function handleDetailOpen(summary = {}) {
-  if (!lastKeyword.value && !keyword.value) {
+function handleTraceMapOpen() {
+  if (!lastKeyword.value) {
     showToast("请先搜索五金商品、材料或工艺关键词");
     return;
   }
   uni.navigateTo({
-    url: buildSummaryContextUrl("/pages/wujin/detail", summary),
-  });
-}
-
-function handleTraceMapOpen(summary = {}) {
-  if (!lastKeyword.value && !keyword.value) {
-    showToast("请先搜索五金商品、材料或工艺关键词");
-    return;
-  }
-  uni.navigateTo({
-    url: buildSummaryContextUrl("/pages/wujin/trace-fullscreen", summary),
-  });
-}
-
-function handleCategorySuggestionSelect(item = {}) {
-  const nextKeyword = item.categoryName || item.categoryPath || keyword.value;
-  keyword.value = nextKeyword;
-  submitSearch({
-    keyword: nextKeyword,
-    requestedLane: item.lane || activeLane.value || "PRODUCT",
-    entryPath: "CATEGORY_SUGGESTION",
-    sourceLane: activeLane.value,
-    sourceKeyword: lastKeyword.value || keyword.value,
-    categoryId: item.categoryId,
-    categoryPath: item.categoryPath,
+    url: `/pages/wujin/trace-fullscreen?keyword=${encodeURIComponent(lastKeyword.value)}&lane=${encodeURIComponent(activeLane.value)}&sourceKeyword=${encodeURIComponent(lastKeyword.value)}`,
   });
 }
 
@@ -654,11 +771,7 @@ onLoad((options = {}) => {
   if (options.keyword) {
     keyword.value = decodeURIComponent(options.keyword);
     requestedLane.value = options.requestedLane ? decodeURIComponent(options.requestedLane) : "";
-    sourceProductId.value = options.sourceProductId
-      ? decodeURIComponent(options.sourceProductId)
-      : options.entityType === "PRODUCT" && options.id
-        ? decodeURIComponent(options.id)
-        : "";
+    sourceProductId.value = options.sourceProductId ? decodeURIComponent(options.sourceProductId) : "";
     sourceEntityId.value = options.sourceEntityId ? decodeURIComponent(options.sourceEntityId) : "";
     submitSearch({
       requestedLane: requestedLane.value || "PRODUCT",
@@ -673,8 +786,8 @@ onLoad((options = {}) => {
 });
 
 onReachBottom(() => {
-  if (searchResult.value) {
-    loadRecommendProducts();
+  if (searchResult.value && !noResult.value) {
+    loadLaneProducts();
   }
 });
 </script>
@@ -685,7 +798,6 @@ onReachBottom(() => {
   gap: 24rpx;
   padding-bottom: 32rpx;
 }
-
 .result-toolbar {
   position: relative;
   z-index: 1;
@@ -694,7 +806,6 @@ onReachBottom(() => {
   min-height: 64rpx;
   gap: 16rpx;
 }
-
 .result-back {
   display: flex;
   width: 64rpx;
@@ -708,13 +819,11 @@ onReachBottom(() => {
   background: rgba(255, 255, 255, 0.5);
   line-height: 1;
 }
-
 .result-title {
   color: #111111;
   font-size: 34rpx;
   font-weight: 900;
 }
-
 .search-box {
   position: relative;
   z-index: 1;
@@ -727,7 +836,6 @@ onReachBottom(() => {
   background: #ffffff;
   box-shadow: 0 14rpx 28rpx rgba(17, 17, 17, 0.08);
 }
-
 .search-input {
   flex: 1;
   height: 70rpx;
@@ -735,7 +843,6 @@ onReachBottom(() => {
   color: #111111;
   font-size: 28rpx;
 }
-
 .search-button {
   width: 124rpx;
   height: 70rpx;
@@ -747,110 +854,17 @@ onReachBottom(() => {
   line-height: 70rpx;
   font-weight: 900;
 }
-
-.search-button::after,
 .result-back::after {
   border: none;
 }
-
 .search-content {
   display: flex;
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow: hidden;
   flex-direction: column;
   margin-top: -18rpx;
 }
-
-.category-suggestion-panel {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  gap: 14rpx;
-  margin-bottom: 14rpx;
-  padding: 18rpx;
-  border: 1rpx solid #eceff3;
-  border-radius: 16rpx;
-  background: #ffffff;
-  box-shadow: 0 12rpx 30rpx rgba(17, 17, 17, 0.06);
-}
-
-.category-suggestion-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.category-suggestion-title {
-  color: #111111;
-  font-size: 28rpx;
-  font-weight: 900;
-}
-
-.category-suggestion-note {
-  color: #6c7580;
-  font-size: 22rpx;
-  font-weight: 700;
-}
-
-.category-suggestion-list {
-  width: 100%;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.category-suggestion-list-inner {
-  display: inline-flex;
-  min-width: 100%;
-  gap: 12rpx;
-  padding-bottom: 2rpx;
-}
-
-.category-suggestion-groups {
-  display: grid;
-  gap: 14rpx;
-}
-
-.category-suggestion-group {
-  min-width: 0;
-}
-
-.category-suggestion-chip {
-  display: flex;
-  align-items: center;
-  max-width: 100%;
-  height: 58rpx;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 0 16rpx;
-  border: none;
-  border-radius: 999rpx;
-  background: #f7f8fa;
-  color: #111111;
-  line-height: 58rpx;
-}
-
-.category-suggestion-chip::after {
-  border: none;
-}
-
-.category-suggestion-label {
-  overflow: hidden;
-  max-width: 220rpx;
-  font-size: 23rpx;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.category-suggestion-empty {
-  color: #8a929d;
-  font-size: 23rpx;
-  line-height: 1.5;
-}
-
 .lane-tabs {
   position: relative;
   z-index: 2;
@@ -859,7 +873,6 @@ onReachBottom(() => {
   gap: 12rpx;
   margin-bottom: 14rpx;
 }
-
 .lane-tab {
   display: grid;
   gap: 6rpx;
@@ -869,47 +882,38 @@ onReachBottom(() => {
   background: #ffffff;
   box-shadow: 0 12rpx 30rpx rgba(17, 17, 17, 0.06);
 }
-
 .lane-tab.active {
   border-color: #111111;
   background: #ffd21e;
 }
-
 .lane-name {
   color: #111111;
   font-size: 29rpx;
   font-weight: 900;
 }
-
 .lane-desc {
   color: #5d6673;
   font-size: 21rpx;
 }
-
 .lane-tab.active .lane-desc {
   color: rgba(17, 17, 17, 0.72);
 }
-
 .empty-result-card {
   align-items: flex-start;
 }
-
 .empty-result-title {
   color: #111111;
   font-size: 30rpx;
   font-weight: 900;
 }
-
 .empty-result-text {
   color: #6c7580;
   font-size: 24rpx;
 }
-
 .result-stack {
   display: grid;
   gap: 18rpx;
 }
-
 .chain-result-head {
   display: flex;
   align-items: center;
@@ -917,25 +921,21 @@ onReachBottom(() => {
   gap: 18rpx;
   padding: 0 4rpx;
 }
-
 .chain-title {
   color: #111111;
   font-size: 34rpx;
   line-height: 1.35;
   font-weight: 900;
 }
-
 .chain-subtitle {
   color: #167f61;
   font-size: 24rpx;
   font-weight: 800;
 }
-
 .product-result-list {
   display: grid;
   gap: 16rpx;
 }
-
 .product-result-card {
   display: grid;
   gap: 14rpx;
@@ -944,13 +944,11 @@ onReachBottom(() => {
   border-radius: 16rpx;
   background: #ffffff;
 }
-
 .product-main {
   display: flex;
   gap: 16rpx;
   min-width: 0;
 }
-
 .product-image-wrap {
   overflow: hidden;
   width: 112rpx;
@@ -959,23 +957,20 @@ onReachBottom(() => {
   border-radius: 12rpx;
   background: #eef1f5;
 }
-
 .product-image {
   width: 100%;
   height: 100%;
 }
-
+/* 无图时用中性占位，避免看起来像某类商品（旧样式像轮胎） */
 .product-image--empty {
-  background: radial-gradient(circle at 50% 50%, #5d6673 0 14rpx, #111111 15rpx 38rpx, #eef1f5 39rpx);
+  background: linear-gradient(160deg, #f4f6f8 0%, #dce2e8 100%);
 }
-
 .product-copy {
   display: grid;
   gap: 8rpx;
   min-width: 0;
   flex: 1;
 }
-
 .product-title {
   overflow: hidden;
   color: #111111;
@@ -987,7 +982,6 @@ onReachBottom(() => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-
 .product-supplier {
   overflow: hidden;
   color: #6c7580;
@@ -995,95 +989,11 @@ onReachBottom(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .product-price {
   color: #d92d20;
   font-size: 27rpx;
   font-weight: 900;
 }
-
-.product-tags {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12rpx;
-}
-
-.material-card {
-  border-radius: 16rpx;
-}
-
-.material-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.material-title {
-  color: #111111;
-  font-size: 32rpx;
-  font-weight: 900;
-}
-
-.material-ratio {
-  color: #111111;
-  font-size: 30rpx;
-  font-weight: 900;
-}
-
-.material-progress {
-  overflow: hidden;
-  height: 12rpx;
-  border-radius: 999rpx;
-  background: #e8edf2;
-}
-
-.material-progress-bar {
-  height: 100%;
-  border-radius: 999rpx;
-  background: #167f61;
-}
-
-.material-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-}
-
-.material-tag {
-  padding: 8rpx 14rpx;
-  border-radius: 999rpx;
-  background: #f3f6fa;
-  color: #2b2f36;
-  font-size: 23rpx;
-  font-weight: 800;
-}
-
-.material-tag:first-child {
-  background: #dff6ea;
-  color: #167f61;
-}
-
-.material-action {
-  width: 188rpx;
-  height: 64rpx;
-  padding: 0 20rpx;
-  font-size: 24rpx;
-  line-height: 64rpx;
-}
-
-.material-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12rpx;
-  padding-top: 4rpx;
-}
-
-.downstream-section {
-  display: grid;
-  gap: 16rpx;
-}
-
 .lane-product-empty {
   display: grid;
   gap: 8rpx;
@@ -1092,93 +1002,373 @@ onReachBottom(() => {
   border-radius: 14rpx;
   background: #ffffff;
 }
-
 .lane-product-empty-title {
   color: #111111;
   font-size: 26rpx;
   font-weight: 800;
 }
 
-.downstream-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.search-empty-state {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
   gap: 14rpx;
-}
-
-.downstream-card {
-  display: grid;
-  gap: 10rpx;
-  min-width: 0;
-  padding: 12rpx;
-  border: 1rpx solid #d8dde5;
-  border-radius: 14rpx;
+  padding: 56rpx 32rpx 40rpx;
+  border: 1rpx solid #eceff3;
+  border-radius: 18rpx;
   background: #ffffff;
 }
 
-.downstream-image-wrap {
-  overflow: hidden;
-  height: 128rpx;
-  border-radius: 10rpx;
-  background: #eef1f5;
+.search-empty-illustration {
+  display: flex;
+  width: 148rpx;
+  height: 148rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f3f5f8;
 }
 
-.downstream-image {
-  width: 100%;
-  height: 100%;
+.search-empty-title {
+  color: #111111;
+  font-size: 30rpx;
+  font-weight: 900;
+  text-align: center;
 }
 
-.downstream-image--empty {
-  background: linear-gradient(160deg, #f4f6f8 0%, #dce2e8 100%);
+.search-empty-text {
+  color: #6c7580;
+  font-size: 24rpx;
+  text-align: center;
 }
 
-.downstream-material {
-  overflow: hidden;
-  color: #8a6500;
-  font-size: 20rpx;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.hot-keyword-head {
+  align-self: stretch;
+  margin-top: 20rpx;
 }
 
-.downstream-title {
-  overflow: hidden;
+.hot-keyword-title {
+  color: #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.hot-keyword-list {
+  display: flex;
+  align-self: stretch;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.hot-keyword-chip {
+  height: 58rpx;
+  margin: 0;
+  padding: 0 22rpx;
+  border: none;
+  border-radius: 999rpx;
+  background: #fff6cc;
   color: #111111;
   font-size: 24rpx;
-  line-height: 1.35;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-height: 58rpx;
+  font-weight: 700;
 }
 
-.downstream-supplier {
+.hot-keyword-chip::after,
+.upstream-chip::after,
+.category-popup-close::after {
+  border: none;
+}
+
+.filter-bar {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14rpx;
+  border: 1rpx solid #eceff3;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 76rpx;
+  gap: 6rpx;
+  padding: 0 12rpx;
+}
+
+.filter-text {
   overflow: hidden;
-  color: #6c7580;
-  font-size: 21rpx;
+  color: #2b2f36;
+  font-size: 25rpx;
+  font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.downstream-price {
-  color: #d92d20;
-  font-size: 27rpx;
+.filter-item.active .filter-text {
+  color: #b07d00;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: 84rpx;
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1rpx solid #eceff3;
+  border-radius: 16rpx;
+  background: #ffffff;
+  box-shadow: 0 18rpx 40rpx rgba(17, 17, 17, 0.12);
+}
+
+.filter-dropdown-list {
+  max-height: 600rpx;
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #f2f4f7;
+  color: #111111;
+  font-size: 26rpx;
+}
+
+.dropdown-option.selected {
+  color: #b07d00;
   font-weight: 900;
 }
 
-.downstream-more {
-  height: 48rpx;
-  margin: 0;
-  border: none;
-  border-radius: 10rpx;
-  background: #eef2f6;
-  color: #111111;
+.dropdown-option-more {
+  flex-shrink: 0;
+  color: #8a929d;
   font-size: 22rpx;
-  line-height: 48rpx;
+}
+
+.dropdown-empty {
+  padding: 28rpx;
+  color: #8a929d;
+  font-size: 24rpx;
+}
+
+.filter-dropdown-mask,
+.category-popup-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  background: rgba(17, 17, 17, 0.32);
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.active-filter-chip {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 8rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: #fff1b8;
+}
+
+.active-filter-text {
+  overflow: hidden;
+  color: #111111;
+  font-size: 23rpx;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upstream-panel {
+  display: grid;
+  gap: 16rpx;
+  padding: 22rpx;
+  border: 1rpx solid #e2e6eb;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.upstream-title {
+  color: #111111;
+  font-size: 27rpx;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.upstream-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.upstream-chip {
+  height: 56rpx;
+  margin: 0;
+  padding: 0 20rpx;
+  border: none;
+  border-radius: 999rpx;
+  background: #dff6ea;
+  color: #167f61;
+  font-size: 24rpx;
+  line-height: 56rpx;
   font-weight: 800;
 }
 
-.downstream-more::after {
+.upstream-empty {
+  color: #8a929d;
+  font-size: 24rpx;
+}
+
+.upstream-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+}
+
+.product-meta {
+  color: #8a929d;
+  font-size: 21rpx;
+}
+
+.product-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.product-tag {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f3f6fa;
+  color: #2b2f36;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.product-tag:first-child {
+  background: #dff6ea;
+  color: #167f61;
+}
+
+.load-more {
+  padding: 12rpx 0 28rpx;
+  color: #8a929d;
+  font-size: 23rpx;
+  text-align: center;
+}
+
+.category-popup-mask {
+  z-index: 40;
+}
+
+.category-popup {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 28rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-radius: 28rpx 28rpx 0 0;
+  background: #ffffff;
+}
+
+.category-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-popup-title {
+  color: #111111;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.category-popup-close {
+  display: flex;
+  width: 56rpx;
+  height: 56rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
   border: none;
+  background: transparent;
+}
+
+.category-popup-path {
+  color: #6c7580;
+  font-size: 23rpx;
+}
+
+.category-popup-columns {
+  display: flex;
+  height: 620rpx;
+  border: 1rpx solid #eceff3;
+  border-radius: 16rpx;
+}
+
+.category-popup-column {
+  flex: 1;
+  min-width: 0;
+  height: 620rpx;
+  border-right: 1rpx solid #eceff3;
+}
+
+.category-popup-column:last-child {
+  border-right: none;
+}
+
+.category-popup-level {
+  display: block;
+  padding: 18rpx 20rpx 10rpx;
+  color: #8a929d;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.popup-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8rpx;
+  padding: 20rpx;
+  color: #111111;
+  font-size: 25rpx;
+}
+
+.popup-option.selected {
+  background: #fff6cc;
+  color: #b07d00;
+  font-weight: 900;
+}
+
+.popup-option-arrow {
+  color: #8a929d;
+}
+
+.category-popup-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  padding-top: 8rpx;
 }
 </style>

@@ -28,6 +28,19 @@ export function getWujinEntityDetail(params = {}) {
   });
 }
 
+/**
+ * 商城商品真实详情；商品不存在或已下架时返回 exists=false
+ */
+export function getWujinProductDetail(id) {
+  return request({
+    url: "/wujin/detail/product",
+    method: "GET",
+    params: { id },
+    showLoading: true,
+    loadingText: "加载详情",
+  });
+}
+
 export function getWujinTraceGraph(params = {}) {
   const { id, entityType, lane, keyword, sourceKeyword, industry, ...extraParams } =
     params;
