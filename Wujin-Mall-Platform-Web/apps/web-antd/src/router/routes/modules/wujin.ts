@@ -33,7 +33,7 @@ const routes: RouteRecordRaw[] = [
           {
             name: 'WujinPlatformCategory',
             path: '/wujin/platform/category',
-            component: () => import('#/views/wujin/platform/index.vue'),
+            component: () => import('#/views/wujin/category/index.vue'),
             meta: {
               icon: 'lucide:folder-tree',
               title: '平台类目',
