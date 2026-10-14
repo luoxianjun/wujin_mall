@@ -17,9 +17,22 @@ public class ProductSpuRespDTO {
 
     private String name;
 
+    private String keyword;
+
+    private String introduction;
+
+    /**
+     * 商品详情，富文本
+     */
+    private String description;
+
     private Long categoryId;
 
+    private Long brandId;
+
     private String picUrl;
+
+    private List<String> sliderPicUrls;
 
     /**
      * 商品状态，使用商品模块 SPU 状态整数值。
@@ -55,5 +68,9 @@ public class ProductSpuRespDTO {
      * false - 默认；true - 自行设置。
      */
     private Boolean subCommissionType;
+
+    private Integer salesCount;
+
+    private Integer virtualSalesCount;
 
 }

@@ -51,6 +51,11 @@ public class ProductSpuApiImpl implements ProductSpuApi {
         return BeanUtils.toBean(spu, ProductSpuRespDTO.class);
     }
 
+    @Override
+    public List<ProductSpuRespDTO> getEnabledSpuListByKeyword(String keyword, int limit) {
+        return BeanUtils.toBean(spuService.getEnabledSpuListByKeyword(keyword, limit), ProductSpuRespDTO.class);
+    }
+
     private ProductSpuSaveReqVO buildSaveReqVO(ProductSpuCreateReqDTO createReqDTO) {
         ProductSpuSaveReqVO saveReqVO = new ProductSpuSaveReqVO();
         saveReqVO.setName(createReqDTO.getName());

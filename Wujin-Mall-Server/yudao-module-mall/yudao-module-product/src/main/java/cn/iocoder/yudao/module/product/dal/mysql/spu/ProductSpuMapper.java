@@ -14,6 +14,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -149,6 +150,21 @@ public interface ProductSpuMapper extends BaseMapperX<ProductSpuDO> {
                 .setSql(" browse_count = browse_count +" + incrCount)
                 .eq(ProductSpuDO::getId, id);
         update(null, updateWrapper);
+    }
+
+
+    /**
+     * 按关键字获得上架中的商品 SPU，匹配商品名或关键字
+     */
+    default List<ProductSpuDO> selectEnabledListByKeyword(String keyword, int limit) {
+        LambdaQueryWrapperX<ProductSpuDO> query = new LambdaQueryWrapperX<>();
+        query.eq(ProductSpuDO::getStatus, ProductSpuStatusEnum.ENABLE.getStatus())
+                .and(wrapper -> wrapper.like(ProductSpuDO::getName, keyword)
+                        .or().like(ProductSpuDO::getKeyword, keyword))
+                .orderByDesc(ProductSpuDO::getSort)
+                .orderByDesc(ProductSpuDO::getId)
+                .last("LIMIT " + limit);
+        return selectList(query);
     }
 
 }

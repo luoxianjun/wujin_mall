@@ -27,8 +27,7 @@ public class WujinCategorySaveReqVO {
     @NotBlank(message = "分类名称不能为空")
     private String name;
 
-    @Schema(description = "分类层级", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
-    @NotNull(message = "分类层级不能为空")
+    @Schema(description = "分类层级，由父分类推导：1 大行业，2-4 为一至三级分类", example = "3")
     private Integer level;
 
     @Schema(description = "排序", example = "10")

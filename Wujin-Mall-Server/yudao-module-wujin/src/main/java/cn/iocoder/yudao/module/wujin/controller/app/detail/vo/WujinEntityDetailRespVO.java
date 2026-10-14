@@ -8,6 +8,11 @@ import java.util.List;
 public class WujinEntityDetailRespVO {
 
     @Schema(description = "实体编号")
+    /**
+     * 实体是否存在且启用；false 时前端展示“已下架或不存在”并引导返回搜索
+     */
+    private Boolean exists;
+
     private Long id;
 
     @Schema(description = "名称")
@@ -45,6 +50,14 @@ public class WujinEntityDetailRespVO {
 
     @Schema(description = "行业对比")
     private List<IndustryComparison> industryComparison;
+
+    public Boolean getExists() {
+        return exists;
+    }
+
+    public void setExists(Boolean exists) {
+        this.exists = exists;
+    }
 
     public Long getId() {
         return id;

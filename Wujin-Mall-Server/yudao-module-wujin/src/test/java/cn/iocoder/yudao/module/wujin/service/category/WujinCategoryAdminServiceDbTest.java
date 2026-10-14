@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryM
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryMappingSaveReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryBatchMigrateReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategorySaveReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategorySortReqVO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.category.WujinCategoryDO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.category.WujinCategoryMappingDO;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static cn.iocoder.yudao.module.wujin.category.WujinCategoryHealthStatus.HEALTHY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Import({WujinCategoryAdminServiceImpl.class, WujinCategoryMappingAdminServiceImpl.class})
@@ -108,6 +110,82 @@ class WujinCategoryAdminServiceDbTest extends BaseDbUnitTest {
                         WujinLane.MATERIAL.name(), 2, 2, HEALTHY.name())));
 
         assertEquals("类目父子节点必须属于同一泳道", exception.getMessage());
+    }
+
+    @Test
+    void createCategoryDerivesLevelFromParentAndStopsAtThirdLevelCategory() {
+        Long industryId = categoryService.createCategory(categoryReq("P", "五金工具", WujinLane.PRODUCT.name(),
+                WujinCategoryDO.PARENT_ID_ROOT));
+        Long firstId = categoryService.createCategory(categoryReq("P.TIRE", "轮胎", WujinLane.PRODUCT.name(), industryId));
+        Long secondId = categoryService.createCategory(categoryReq("P.TIRE.CAR", "乘用车轮胎", WujinLane.PRODUCT.name(), firstId));
+        WujinCategorySaveReqVO thirdReq = categoryReq("P.TIRE.CAR.SEDAN", "轿车轮胎", WujinLane.PRODUCT.name(), secondId);
+        thirdReq.setLevel(9);
+        Long thirdId = categoryService.createCategory(thirdReq);
+
+        assertEquals(2, categoryService.getCategory(firstId).getLevel());
+        assertEquals(3, categoryService.getCategory(secondId).getLevel());
+        assertEquals(4, categoryService.getCategory(thirdId).getLevel());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> categoryService
+                .createCategory(categoryReq("P.TIRE.CAR.SEDAN.X", "过深分类", WujinLane.PRODUCT.name(), thirdId)));
+        assertEquals("类目最多支持到三级分类", exception.getMessage());
+    }
+
+    @Test
+    void movingCategoryRefreshesDescendantLevelsAndRejectsCycles() {
+        Long toolsId = categoryService.createCategory(categoryReq("P", "五金工具", WujinLane.PRODUCT.name(),
+                WujinCategoryDO.PARENT_ID_ROOT));
+        Long tireId = categoryService.createCategory(categoryReq("P2", "轮胎", WujinLane.PRODUCT.name(),
+                WujinCategoryDO.PARENT_ID_ROOT));
+        Long carId = categoryService.createCategory(categoryReq("P2.CAR", "乘用车轮胎", WujinLane.PRODUCT.name(), tireId));
+
+        WujinCategorySaveReqVO moveReq = categoryReq("P.TIRE", "轮胎", WujinLane.PRODUCT.name(), toolsId);
+        moveReq.setId(tireId);
+        categoryService.updateCategory(moveReq);
+
+        assertEquals(2, categoryService.getCategory(tireId).getLevel());
+        assertEquals(3, categoryService.getCategory(carId).getLevel());
+        WujinCategorySaveReqVO cycleReq = categoryReq("P", "五金工具", WujinLane.PRODUCT.name(), carId);
+        cycleReq.setId(toolsId);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> categoryService.updateCategory(cycleReq));
+        assertEquals("不能将分类移动到自己的子级下", exception.getMessage());
+    }
+
+    @Test
+    void deleteCategoryWithChildrenNeedsCascade() {
+        Long rootId = categoryService.createCategory(categoryReq("P", "五金工具", WujinLane.PRODUCT.name(),
+                WujinCategoryDO.PARENT_ID_ROOT));
+        Long tireId = categoryService.createCategory(categoryReq("P.TIRE", "轮胎", WujinLane.PRODUCT.name(), rootId));
+        Long carId = categoryService.createCategory(categoryReq("P.TIRE.CAR", "乘用车轮胎", WujinLane.PRODUCT.name(), tireId));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> categoryService.deleteCategory(rootId, false));
+        assertEquals("存在子分类，无法删除", exception.getMessage());
+
+        assertEquals(3, categoryService.deleteCategory(rootId, true));
+        assertNull(categoryService.getCategory(rootId));
+        assertNull(categoryService.getCategory(tireId));
+        assertNull(categoryService.getCategory(carId));
+    }
+
+    @Test
+    void updateCategorySortFollowsGivenOrderWithinSameParent() {
+        Long rootId = categoryService.createCategory(categoryReq("P", "五金工具", WujinLane.PRODUCT.name(),
+                WujinCategoryDO.PARENT_ID_ROOT));
+        Long tireId = categoryService.createCategory(categoryReq("P.TIRE", "轮胎", WujinLane.PRODUCT.name(), rootId));
+        Long boltId = categoryService.createCategory(categoryReq("P.BOLT", "紧固件", WujinLane.PRODUCT.name(), rootId));
+
+        WujinCategorySortReqVO sortReqVO = new WujinCategorySortReqVO();
+        sortReqVO.setParentId(rootId);
+        sortReqVO.setIds(Arrays.asList(boltId, tireId));
+        categoryService.updateCategorySort(sortReqVO);
+
+        assertEquals(1, categoryService.getCategory(boltId).getSort());
+        assertEquals(2, categoryService.getCategory(tireId).getSort());
+        sortReqVO.setIds(Arrays.asList(boltId, rootId));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> categoryService.updateCategorySort(sortReqVO));
+        assertEquals("只能对同一父级下的分类排序", exception.getMessage());
     }
 
     private WujinCategorySaveReqVO categoryReq(String code, String name, String lane, Long parentId) {

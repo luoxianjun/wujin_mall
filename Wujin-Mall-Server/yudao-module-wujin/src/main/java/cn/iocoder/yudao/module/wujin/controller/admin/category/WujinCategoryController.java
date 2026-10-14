@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryB
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryListReqVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategoryRespVO;
 import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategorySaveReqVO;
+import cn.iocoder.yudao.module.wujin.controller.admin.category.vo.WujinCategorySortReqVO;
 import cn.iocoder.yudao.module.wujin.dal.dataobject.category.WujinCategoryDO;
 import cn.iocoder.yudao.module.wujin.service.category.WujinCategoryAdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -59,13 +60,23 @@ public class WujinCategoryController {
         return success(categoryService.batchMigrateCategory(migrateReqVO));
     }
 
-    @DeleteMapping("/delete")
-    @Operation(summary = "删除五金三泳道分类")
-    @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('wujin:category:delete')")
-    public CommonResult<Boolean> deleteCategory(@RequestParam("id") Long id) {
-        categoryService.deleteCategory(id);
+    @PutMapping("/update-sort")
+    @Operation(summary = "更新同级五金分类排序")
+    @PreAuthorize("@ss.hasPermission('wujin:category:update')")
+    public CommonResult<Boolean> updateCategorySort(@Valid @RequestBody WujinCategorySortReqVO sortReqVO) {
+        categoryService.updateCategorySort(sortReqVO);
         return success(true);
+    }
+
+    @DeleteMapping("/delete")
+    @Operation(summary = "删除五金三泳道分类；cascade=true 时同时删除全部子级")
+    @Parameter(name = "id", description = "编号", required = true)
+    @Parameter(name = "cascade", description = "是否同时删除子级")
+    @PreAuthorize("@ss.hasPermission('wujin:category:delete')")
+    public CommonResult<Integer> deleteCategory(@RequestParam("id") Long id,
+                                                @RequestParam(value = "cascade", required = false,
+                                                        defaultValue = "false") Boolean cascade) {
+        return success(categoryService.deleteCategory(id, Boolean.TRUE.equals(cascade)));
     }
 
     @GetMapping("/get")

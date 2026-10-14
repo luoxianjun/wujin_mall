@@ -19,6 +19,10 @@ public class WujinAppSearchRespVO {
     private List<CategorySuggestion> categorySuggestions;
     private List<CategoryGroup> categoryGroups;
     private List<RelatedProduct> relatedProducts;
+    /**
+     * 当前泳道下关键词命中的类目树，用于小程序逐级（二级、三级）筛选
+     */
+    private List<CategoryNode> categoryTree;
 
     public String getKeyword() {
         return keyword;
@@ -114,6 +118,75 @@ public class WujinAppSearchRespVO {
 
     public void setRelatedProducts(List<RelatedProduct> relatedProducts) {
         this.relatedProducts = relatedProducts;
+    }
+
+    public List<CategoryNode> getCategoryTree() {
+        return categoryTree;
+    }
+
+    public void setCategoryTree(List<CategoryNode> categoryTree) {
+        this.categoryTree = categoryTree;
+    }
+
+    public static class CategoryNode {
+
+        private Long categoryId;
+        private String name;
+        /**
+         * 层级：1 大行业，2 一级分类，3 二级分类，4 三级分类
+         */
+        private Integer level;
+        private String levelName;
+        private String lane;
+        private List<CategoryNode> children;
+
+        public Long getCategoryId() {
+            return categoryId;
+        }
+
+        public void setCategoryId(Long categoryId) {
+            this.categoryId = categoryId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Integer getLevel() {
+            return level;
+        }
+
+        public void setLevel(Integer level) {
+            this.level = level;
+        }
+
+        public String getLevelName() {
+            return levelName;
+        }
+
+        public void setLevelName(String levelName) {
+            this.levelName = levelName;
+        }
+
+        public String getLane() {
+            return lane;
+        }
+
+        public void setLane(String lane) {
+            this.lane = lane;
+        }
+
+        public List<CategoryNode> getChildren() {
+            return children;
+        }
+
+        public void setChildren(List<CategoryNode> children) {
+            this.children = children;
+        }
     }
 
     public static class CategoryGroup {

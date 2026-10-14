@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.product.service.spu;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
@@ -210,6 +211,14 @@ public class ProductSpuServiceImpl implements ProductSpuService {
         Map<Long, ProductSpuDO> spuMap = convertMap(productSpuMapper.selectByIds(ids), ProductSpuDO::getId);
         // 需要按照 ids 顺序返回。例如说：店铺装修选择了 [3, 1, 2] 三个商品，返回结果还是 [3, 1, 2]  这样的顺序
         return convertList(ids, spuMap::get);
+    }
+
+    @Override
+    public List<ProductSpuDO> getEnabledSpuListByKeyword(String keyword, int limit) {
+        if (StrUtil.isBlank(keyword) || limit <= 0) {
+            return Collections.emptyList();
+        }
+        return productSpuMapper.selectEnabledListByKeyword(keyword.trim(), limit);
     }
 
     @Override

@@ -56,4 +56,13 @@ public interface ProductSpuApi {
      */
     ProductSpuRespDTO getSpu(Long id);
 
+    /**
+     * 按关键字获得上架中的 SPU 数组
+     *
+     * @param keyword 关键字，匹配商品名或关键字
+     * @param limit   最大数量
+     * @return SPU 数组
+     */
+    List<ProductSpuRespDTO> getEnabledSpuListByKeyword(String keyword, int limit);
+
 }

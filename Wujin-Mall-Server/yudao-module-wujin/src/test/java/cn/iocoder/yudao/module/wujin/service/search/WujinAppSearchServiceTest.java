@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.wujin.service.search;
 
 import cn.iocoder.yudao.framework.test.core.ut.BaseDbUnitTest;
+import cn.iocoder.yudao.module.product.api.brand.ProductBrandApi;
 import cn.iocoder.yudao.module.product.api.spu.ProductSpuApi;
 import cn.iocoder.yudao.module.product.api.spu.dto.ProductSpuRespDTO;
 import cn.iocoder.yudao.module.wujin.chain.WujinRelationType;
@@ -20,6 +21,8 @@ import cn.iocoder.yudao.module.wujin.search.WujinEntryPath;
 import cn.iocoder.yudao.module.wujin.search.WujinLane;
 import cn.iocoder.yudao.module.wujin.search.WujinSearchRuleContext;
 import cn.iocoder.yudao.module.wujin.search.WujinSearchRuleEngine;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinAttributeDictionaryAdminServiceImpl;
+import cn.iocoder.yudao.module.wujin.service.attribute.WujinProductAttributeServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.category.WujinCategoryAdminService;
 import cn.iocoder.yudao.module.wujin.service.category.WujinCategoryAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.category.WujinCategoryMappingAdminService;
@@ -28,6 +31,7 @@ import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityRelationAdminService;
 import cn.iocoder.yudao.module.wujin.service.chain.WujinChainEntityRelationAdminServiceImpl;
+import cn.iocoder.yudao.module.wujin.service.merchant.WujinMerchantRelationSubmissionAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.monitor.WujinSearchBehaviorLogAdminService;
 import cn.iocoder.yudao.module.wujin.service.monitor.WujinSearchBehaviorLogAdminServiceImpl;
 import cn.iocoder.yudao.module.wujin.service.monitor.WujinSearchRuleConfigAdminService;
@@ -40,6 +44,7 @@ import org.springframework.context.annotation.Import;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,12 +52,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @Import({WujinAppSearchServiceImpl.class, WujinSearchBehaviorLogAdminServiceImpl.class,
         WujinSearchRuleConfigAdminServiceImpl.class, WujinChainEntityAdminServiceImpl.class,
         WujinChainEntityRelationAdminServiceImpl.class, WujinMerchantSupplyCapabilityAdminServiceImpl.class,
-        WujinCategoryAdminServiceImpl.class, WujinCategoryMappingAdminServiceImpl.class})
+        WujinCategoryAdminServiceImpl.class, WujinCategoryMappingAdminServiceImpl.class,
+        WujinLaneProductServiceImpl.class, WujinProductAttributeServiceImpl.class,
+        WujinAttributeDictionaryAdminServiceImpl.class, WujinMerchantRelationSubmissionAdminServiceImpl.class})
 class WujinAppSearchServiceTest extends BaseDbUnitTest {
 
     @Resource
@@ -73,6 +82,8 @@ class WujinAppSearchServiceTest extends BaseDbUnitTest {
     private WujinMerchantSupplyCapabilityAdminService supplyCapabilityService;
     @MockBean
     private ProductSpuApi productSpuApi;
+    @MockBean
+    private ProductBrandApi productBrandApi;
 
     @Test
     void searchMaterialKeywordReturnsThreeLaneTraceAndPersistsBehaviorLog() {
@@ -94,7 +105,8 @@ class WujinAppSearchServiceTest extends BaseDbUnitTest {
         assertTrue(respVO.getExplanation().contains("跨多个行业"));
         assertEquals(3, respVO.getLaneSummaries().size());
         assertEquals("原材料", respVO.getLaneSummaries().get(0).getLaneName());
-        assertTrue(respVO.getLaneSummaries().get(0).getResultCount() > 0);
+        // 没有在售商品时泳道数量为 0，不再返回固定兜底数量
+        assertEquals(0, respVO.getLaneSummaries().get(0).getResultCount());
         assertNotNull(respVO.getTraceHint());
         assertTrue(respVO.getTraceHint().contains("天然橡胶"));
 
@@ -127,23 +139,65 @@ class WujinAppSearchServiceTest extends BaseDbUnitTest {
     }
 
     @Test
-    void searchUsesPersistedChainEntitiesAsLaneSummaryCounts() {
-        chainEntityService.createEntity(entityReq("P_TIRE_CAR", "乘用车轮胎", WujinLane.PRODUCT.name(), "汽车,橡胶"));
-        chainEntityService.createEntity(entityReq("P_TIRE_ENGINEERING", "工程机械轮胎", WujinLane.PRODUCT.name(), "工程机械,橡胶"));
-        chainEntityService.createEntity(entityReq("M_TIRE_RUBBER", "轮胎胎面橡胶", WujinLane.MATERIAL.name(), "汽车,橡胶"));
+    void searchCountsSellableProductsPerLaneWithoutDuplicates() {
+        Long tireEntityId = chainEntityService.createEntity(entityReq("P_TIRE_COUNT", "轮胎", WujinLane.PRODUCT.name(), "汽车,橡胶"));
+        Long rubberEntityId = chainEntityService.createEntity(entityReq("M_RUBBER_COUNT", "天然橡胶", WujinLane.MATERIAL.name(), "汽车,橡胶"));
+        chainEntityRelationService.createRelation(relationReq(tireEntityId, rubberEntityId));
+        WujinMerchantSupplyCapabilitySaveReqVO tireCapability = capabilityReq(tireEntityId, 9001L);
+        tireCapability.setLane(WujinLane.PRODUCT.name());
+        tireCapability.setProductName("米其林 205/55R16 乘用车轮胎");
+        supplyCapabilityService.createCapability(tireCapability);
+        supplyCapabilityService.createCapability(capabilityReq(rubberEntityId, 9201L));
+        ProductSpuRespDTO tire = spu(9001L, "米其林 205/55R16 乘用车轮胎");
+        ProductSpuRespDTO rubber = spu(9201L, "泰国 STR20 轮胎级天然橡胶");
+        when(productSpuApi.getEnabledSpuListByKeyword(eq("轮胎"), anyInt())).thenReturn(Arrays.asList(tire, rubber));
+        when(productSpuApi.getSpuList(anyCollection())).thenReturn(Arrays.asList(tire, rubber));
 
         WujinAppSearchReqVO reqVO = new WujinAppSearchReqVO();
         reqVO.setUserId(103L);
         reqVO.setKeyword("轮胎");
         reqVO.setRequestedLane(WujinLane.PRODUCT.name());
         reqVO.setEntryPath(WujinEntryPath.DIRECT_SEARCH.name());
-        reqVO.setIndustry("橡胶");
         reqVO.setResponseTimeMillis(580L);
 
         WujinAppSearchRespVO respVO = appSearchService.search(reqVO);
 
-        assertEquals(2, laneSummary(respVO, WujinLane.PRODUCT).getResultCount());
+        // 天然橡胶商品名也含“轮胎”，但它只归属原材料泳道
+        assertEquals(1, laneSummary(respVO, WujinLane.PRODUCT).getResultCount());
+        assertEquals(0, laneSummary(respVO, WujinLane.PROCESS).getResultCount());
         assertEquals(1, laneSummary(respVO, WujinLane.MATERIAL).getResultCount());
+    }
+
+    @Test
+    void searchReturnsNestedCategoryTreeForMatchedLaneCategory() {
+        Long rootId = categoryService.createCategory(categoryReq("P", "五金成品",
+                WujinLane.PRODUCT.name(), WujinCategoryDO.PARENT_ID_ROOT, 1, 10));
+        Long fastenerId = categoryService.createCategory(categoryReq("P.FASTENER", "紧固件",
+                WujinLane.PRODUCT.name(), rootId, 2, 10));
+        Long boltId = categoryService.createCategory(categoryReq("P.FASTENER.BOLT", "螺栓",
+                WujinLane.PRODUCT.name(), fastenerId, 3, 10));
+        categoryService.createCategory(categoryReq("P.FASTENER.BOLT.HEX", "外六角螺栓",
+                WujinLane.PRODUCT.name(), boltId, 4, 10));
+        categoryService.createCategory(categoryReq("P.FASTENER.NUT", "螺母",
+                WujinLane.PRODUCT.name(), fastenerId, 3, 20));
+
+        WujinAppSearchReqVO reqVO = new WujinAppSearchReqVO();
+        reqVO.setKeyword("紧固件");
+        reqVO.setRequestedLane(WujinLane.PRODUCT.name());
+        reqVO.setEntryPath(WujinEntryPath.DIRECT_SEARCH.name());
+
+        WujinAppSearchRespVO respVO = appSearchService.search(reqVO);
+
+        assertEquals(1, respVO.getCategoryTree().size());
+        WujinAppSearchRespVO.CategoryNode fastener = respVO.getCategoryTree().get(0);
+        assertEquals("紧固件", fastener.getName());
+        assertEquals("一级分类", fastener.getLevelName());
+        assertEquals(2, fastener.getChildren().size());
+        assertEquals("螺栓", fastener.getChildren().get(0).getName());
+        assertEquals("二级分类", fastener.getChildren().get(0).getLevelName());
+        assertEquals("外六角螺栓", fastener.getChildren().get(0).getChildren().get(0).getName());
+        assertEquals("三级分类", fastener.getChildren().get(0).getChildren().get(0).getLevelName());
+        assertTrue(fastener.getChildren().get(1).getChildren().isEmpty());
     }
 
     @Test
@@ -368,6 +422,15 @@ class WujinAppSearchServiceTest extends BaseDbUnitTest {
         engine.apply(context, 3, WujinLane.MATERIAL, false, null, "base", rules);
 
         assertEquals(1, engine.getCompiledConditionCacheSize());
+    }
+
+    private ProductSpuRespDTO spu(Long id, String name) {
+        ProductSpuRespDTO spu = new ProductSpuRespDTO();
+        spu.setId(id);
+        spu.setName(name);
+        spu.setPrice(39900);
+        spu.setStatus(1);
+        return spu;
     }
 
     private WujinAppSearchRespVO.LaneSummary laneSummary(WujinAppSearchRespVO respVO, WujinLane lane) {

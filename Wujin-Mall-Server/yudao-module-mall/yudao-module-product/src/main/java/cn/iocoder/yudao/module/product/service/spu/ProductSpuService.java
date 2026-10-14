@@ -69,6 +69,15 @@ public interface ProductSpuService {
     List<ProductSpuDO> getSpuList(Collection<Long> ids);
 
     /**
+     * 按关键字获得上架中的商品 SPU 列表
+     *
+     * @param keyword 关键字，匹配商品名或关键字
+     * @param limit   最大数量
+     * @return 商品 SPU 列表
+     */
+    List<ProductSpuDO> getEnabledSpuListByKeyword(String keyword, int limit);
+
+    /**
      * 获得商品 SPU Map
      *
      * @param ids 编号数组

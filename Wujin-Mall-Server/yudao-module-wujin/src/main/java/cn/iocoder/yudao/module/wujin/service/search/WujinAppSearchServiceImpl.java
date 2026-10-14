@@ -78,6 +78,8 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
     private WujinMerchantSupplyCapabilityAdminService supplyCapabilityService;
     @Resource
     private ProductSpuApi productSpuApi;
+    @Resource
+    private WujinLaneProductService laneProductService;
 
     @Override
     public WujinAppSearchRespVO search(WujinAppSearchReqVO reqVO) {
@@ -118,10 +120,10 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
         List<WujinAppSearchRespVO.RelatedProduct> relatedProducts = buildRelatedProducts(
                 reqVO, requestedLane, categorySuggestions);
         List<WujinAppSearchRespVO.LaneSummary> laneSummaries = buildLaneSummaries(reqVO, decision.getDefaultLane());
-        applyRelatedProductCount(laneSummaries, requestedLane, relatedProducts);
         respVO.setLaneSummaries(laneSummaries);
         respVO.setCategorySuggestions(categorySuggestions);
         respVO.setCategoryGroups(categoryGroups);
+        respVO.setCategoryTree(buildCategoryTree(reqVO, searchCategories));
         respVO.setRelatedProducts(relatedProducts);
 
         persistBehaviorLog(reqVO, intent, decision);
@@ -280,21 +282,6 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
         return relatedProduct;
     }
 
-    private void applyRelatedProductCount(List<WujinAppSearchRespVO.LaneSummary> summaries,
-                                          WujinLane requestedLane,
-                                          List<WujinAppSearchRespVO.RelatedProduct> relatedProducts) {
-        if (requestedLane != WujinLane.MATERIAL || relatedProducts.isEmpty()) {
-            return;
-        }
-        for (WujinAppSearchRespVO.LaneSummary summary : summaries) {
-            if (WujinLane.MATERIAL.name().equals(summary.getLane())) {
-                summary.setResultCount(relatedProducts.size());
-                summary.setSummary("已找到与当前成品产业链关联的可售原材料商品");
-                return;
-            }
-        }
-    }
-
     private int defaultInt(Integer value, int defaultValue) {
         return value == null ? defaultValue : value;
     }
@@ -341,16 +328,16 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
     }
 
     private List<WujinAppSearchRespVO.LaneSummary> buildLaneSummaries(WujinAppSearchReqVO reqVO, WujinLane defaultLane) {
+        // 泳道数量为该泳道下实际可展示的商品数，不再使用固定兜底值
+        Map<String, Integer> counts = laneProductService.countLaneProducts(reqVO.getKeyword(),
+                reqVO.getSourceProductId());
         List<WujinAppSearchRespVO.LaneSummary> summaries = new ArrayList<>();
-        addSummary(summaries, WujinLane.PRODUCT, defaultLane,
-                resolveLaneResultCount(reqVO, WujinLane.PRODUCT, 227, defaultLane),
+        addSummary(summaries, WujinLane.PRODUCT, defaultLane, counts.get(WujinLane.PRODUCT.name()),
                 "可交易成品与使用“" + reqVO.getKeyword() + "”的下游商品", "查看成品规格");
-        addSummary(summaries, WujinLane.PROCESS, defaultLane,
-                resolveLaneResultCount(reqVO, WujinLane.PROCESS, 12, defaultLane),
-                "混炼、成型、硫化、检测等加工能力", "查看加工服务");
-        addSummary(summaries, WujinLane.MATERIAL, defaultLane,
-                resolveLaneResultCount(reqVO, WujinLane.MATERIAL, 18, defaultLane),
-                "天然橡胶、炭黑、骨架材料、化工助剂等原材料", "查看规格差异");
+        addSummary(summaries, WujinLane.PROCESS, defaultLane, counts.get(WujinLane.PROCESS.name()),
+                "与“" + reqVO.getKeyword() + "”相关的上游加工工艺与加工服务", "查看加工服务");
+        addSummary(summaries, WujinLane.MATERIAL, defaultLane, counts.get(WujinLane.MATERIAL.name()),
+                "与“" + reqVO.getKeyword() + "”相关的上游原材料", "查看规格差异");
         summaries.sort((left, right) -> {
             if (left.getLane().equals(defaultLane.name())) {
                 return -1;
@@ -367,26 +354,6 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
                             int resultCount, String summary, String nextAction) {
         summaries.add(new WujinAppSearchRespVO.LaneSummary(lane.name(), laneName(lane),
                 resultCount, summary, nextAction));
-    }
-
-    private int resolveLaneResultCount(WujinAppSearchReqVO reqVO, WujinLane lane, int fallbackCount, WujinLane defaultLane) {
-        List<WujinChainEntityDO> entities = searchEnabledEntities(reqVO, lane);
-        if (!entities.isEmpty()) {
-            return entities.size();
-        }
-        return lane == defaultLane ? fallbackCount : Math.max(1, fallbackCount / 2);
-    }
-
-    private List<WujinChainEntityDO> searchEnabledEntities(WujinAppSearchReqVO reqVO, WujinLane lane) {
-        if (reqVO.getKeyword() == null || reqVO.getKeyword().trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-        WujinChainEntityListReqVO listReqVO = new WujinChainEntityListReqVO();
-        listReqVO.setLane(lane.name());
-        listReqVO.setName(reqVO.getKeyword());
-        listReqVO.setIndustry(reqVO.getIndustry());
-        listReqVO.setStatus(ENABLED_STATUS);
-        return chainEntityService.getEntityList(listReqVO);
     }
 
     private List<WujinCategoryDO> getEnabledCategories() {
@@ -538,6 +505,63 @@ public class WujinAppSearchServiceImpl implements WujinAppSearchService {
                     entry.getKey(), categoryLevelName(entry.getKey()), entry.getValue()));
         }
         return groups;
+    }
+
+    /**
+     * 当前泳道下关键词命中的类目（不含被其他命中类目包含的子类目）及其全部子级，最多到三级分类
+     */
+    private List<WujinAppSearchRespVO.CategoryNode> buildCategoryTree(
+            WujinAppSearchReqVO reqVO, List<WujinCategoryDO> categories) {
+        if (isBlank(reqVO.getKeyword()) || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Long, WujinCategoryDO> byId = new HashMap<>();
+        for (WujinCategoryDO category : categories) {
+            byId.put(category.getId(), category);
+        }
+        WujinLane requestedLane = parseEnum(WujinLane.class, reqVO.getRequestedLane(), WujinLane.PRODUCT);
+        String keyword = reqVO.getKeyword().trim();
+        List<WujinCategoryDO> roots = findKeywordMatchedCategories(categories, keyword, requestedLane.name());
+        if (roots.isEmpty()) {
+            roots.addAll(resolveMappedCategories(findKeywordMatchedCategories(categories, keyword, null),
+                    requestedLane, byId));
+        }
+        roots = removeNestedMatchedCategories(roots, byId);
+        roots.sort(categoryComparator());
+        List<WujinAppSearchRespVO.CategoryNode> tree = new ArrayList<>();
+        for (WujinCategoryDO root : roots) {
+            tree.add(toCategoryNode(root, categories));
+        }
+        return tree;
+    }
+
+    private WujinAppSearchRespVO.CategoryNode toCategoryNode(WujinCategoryDO category,
+                                                             List<WujinCategoryDO> categories) {
+        WujinAppSearchRespVO.CategoryNode node = new WujinAppSearchRespVO.CategoryNode();
+        node.setCategoryId(category.getId());
+        node.setName(category.getName());
+        node.setLevel(category.getLevel());
+        node.setLevelName(categoryTreeLevelName(category.getLevel()));
+        node.setLane(category.getLane());
+        List<WujinAppSearchRespVO.CategoryNode> children = new ArrayList<>();
+        for (WujinCategoryDO child : findDirectChildren(categories, category)) {
+            children.add(toCategoryNode(child, categories));
+        }
+        node.setChildren(children);
+        return node;
+    }
+
+    private String categoryTreeLevelName(Integer level) {
+        switch (defaultInt(level, 1)) {
+            case 1:
+                return "大行业";
+            case 2:
+                return "一级分类";
+            case 3:
+                return "二级分类";
+            default:
+                return "三级分类";
+        }
     }
 
     private List<WujinCategoryDO> removeNestedMatchedCategories(List<WujinCategoryDO> matches,
